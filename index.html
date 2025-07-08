@@ -1,7 +1,35 @@
 <!DOCTYPE html>
 <html>
+<head>
+  <meta charset="UTF-8">
+  <title>Random Python Function Generator</title>
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
+</head>
 <body>
-<h1>Hello World</h1>
-<p>I'm hosted with GitHub Pages.</p>
+  <h1>Hello World</h1>
+  <p>I'm hosted with GitHub Pages.</p>
+
+  <button id="generate-btn">Generate Random Python Function</button>
+  <pre id="output"></pre>
+
+  <script>
+  async function initPyodide() {
+    window.pyodide = await loadPyodide();
+  }
+  initPyodide();
+
+  document.getElementById('generate-btn').addEventListener('click', async () => {
+    const code = `
+import random
+def random_func():
+    name = 'f_' + ''.join(random.choices('abcdefghijklmnopqrstuvwxyz', k=5))
+    body = '    return ' + str(random.randint(0, 100))
+    return f"def {name}():\n{body}"
+random_func()
+`;
+    const result = await pyodide.runPythonAsync(code);
+    document.getElementById('output').textContent = result;
+  });
+  </script>
 </body>
 </html>
