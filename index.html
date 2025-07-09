@@ -22,17 +22,22 @@
 
     window.pyodide = await initPyodide();
 
+    // load the Python module into Pyodide's virtual filesystem
+    {
+      const resp = await fetch("quine_ast_liv_0.py");
+      const text = await resp.text();
+      window.pyodide.FS.writeFile("quine_ast_liv_0.py", text);
+    }
+
     const generateBtn = document.getElementById("generate-btn");
     const output = document.getElementById("output");
 
     generateBtn.addEventListener("click", async () => {
       const code = `
-import random
-def random_func():
-    name = 'f_' + ''.join(random.choices('abcdefghijklmnopqrstuvwxyz', k=5))
-    body = '    return ' + str(random.randint(0, 100))
-    return f"def {name}():\\n{body}"
-random_func()
+import ast
+from quine_ast_liv_0 import generate_random_ast
+node = generate_random_ast(3)
+ast.unparse(node)
 `;
       const result = await window.pyodide.runPythonAsync(code);
       output.textContent = result;
