@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <title>Random Python Function Generator</title>
-  <script src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
 </head>
 <body>
   <h1>Hello World</h1>
@@ -12,24 +11,32 @@
   <button id="generate-btn">Generate Random Python Function</button>
   <pre id="output"></pre>
 
-  <script>
-  async function initPyodide() {
-    window.pyodide = await loadPyodide();
-  }
-  initPyodide();
+  <script type="module">
+    import { loadPyodide } from "https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js";
 
-  document.getElementById('generate-btn').addEventListener('click', async () => {
-    const code = `
+    async function initPyodide() {
+      return await loadPyodide({
+        indexURL: "https://cdn.jsdelivr.net/pyodide/v0.23.4/full/"
+      });
+    }
+
+    window.pyodide = await initPyodide();
+
+    const generateBtn = document.getElementById("generate-btn");
+    const output = document.getElementById("output");
+
+    generateBtn.addEventListener("click", async () => {
+      const code = `
 import random
 def random_func():
     name = 'f_' + ''.join(random.choices('abcdefghijklmnopqrstuvwxyz', k=5))
     body = '    return ' + str(random.randint(0, 100))
-    return f"def {name}():\n{body}"
+    return f"def {name}():\\n{body}"
 random_func()
 `;
-    const result = await pyodide.runPythonAsync(code);
-    document.getElementById('output').textContent = result;
-  });
+      const result = await window.pyodide.runPythonAsync(code);
+      output.textContent = result;
+    });
   </script>
 </body>
 </html>
