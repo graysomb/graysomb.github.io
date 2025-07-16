@@ -2,13 +2,13 @@
 This file tracks tasks needed to build the early-2000s–style personal website.
 
 ## 1. Setup & Scaffolding
-- [ ] Create project root directories:
+- [x] Create project root directories:
   - `css/`, `js/`, `images/ads/`, `assets/`
-- [ ] Scaffold HTML pages:
+- [x] Scaffold HTML pages:
   - `index.html`, `projects.html`, `work.html`, `stories.html`,
     `essays.html`, `cringe.html`, `arxiv.html`, `cool-facts.html`, `donate.html`
-- [ ] Create CSS entrypoint: `css/style.css`
-- [ ] Create JS entrypoints: `js/main.js`, `js/code-generator.js`
+- [x] Create CSS entrypoint: `css/style.css`
+- [x] Create JS entrypoints: `js/main.js`, `js/code-generator.js`
 
 ## 2. Global Navigation & Layout
 - [ ] Implement persistent navigation bar or sidebar on all pages

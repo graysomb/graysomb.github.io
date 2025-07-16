@@ -1,0 +1,48 @@
+/* style.css - global styles */
+
+body {
+  margin: 0;
+  padding: 0;
+  background: #000;
+  font-family: 'Press Start 2P', monospace, Arial, sans-serif;
+  color: #00ff00;
+}
+
+/* Navigation bar styles */
+nav {
+  background: #111;
+  border-bottom: 2px solid #f0f;
+}
+nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+}
+nav li {
+  margin-right: 10px;
+}
+nav a {
+  color: #0f0;
+  text-decoration: none;
+  padding: 5px 10px;
+}
+nav a:hover, nav a.active {
+  background: #333;
+  border: 1px solid #f0f;
+}
+
+/* Ad box */
+.ad-box {
+  width: 200px;
+  height: 200px;
+  border: 3px dotted yellow;
+  margin: 10px auto;
+  text-align: center;
+  line-height: 200px;
+}
+
+/* Main content area */
+main {
+  padding: 20px;
+}
