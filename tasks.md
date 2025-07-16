@@ -11,14 +11,14 @@ This file tracks tasks needed to build the early-2000s–style personal website.
 - [x] Create JS entrypoints: `js/main.js`, `js/code-generator.js`
 
 ## 2. Global Navigation & Layout
-+ [x] Implement persistent navigation bar or sidebar on all pages
-+ [x] Highlight active page in the navigation
-+ [x] Add a reusable ad slot container (`<div id="sidebar-ad">`)
+- [x] Implement persistent navigation bar or sidebar on all pages
+- [x] Highlight active page in the navigation
+- [x] Add a reusable ad slot container (`<div id="sidebar-ad">`)
 
 ## 3. Projects Page
-- [ ] Move existing random code generator from `index.html` to `projects.html`
-- [ ] Wire up `js/code-generator.js` and attach to a container element
-- [ ] Style the generator controls with pixel-style borders
+- [x] Move existing random code generator from `index.html` to `projects.html`
+- [x] Wire up `js/code-generator.js` and attach to a container element
+- [x] Style the generator controls with pixel-style borders
 
 ## 4. Fake Meme Ad System
 - [ ] Implement ad rotator logic in `js/main.js`
