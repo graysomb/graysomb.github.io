@@ -14,19 +14,19 @@ This file tracks tasks needed to integrate a Git-based CMS (Netlify CMS) for eas
   - Register a GitHub OAuth App and configure `client_id` in `admin/config.yml` for GitHub Pages backend
 
 ## 3. Content Structure
-+- [x] Create `content/` directory to hold Markdown files
-+- [x] Convert existing HTML pages to Markdown with front matter:
+- [x] Create `content/` directory to hold Markdown files
+- [x] Convert existing HTML pages to Markdown with front matter:
    - `home.md`, `projects.md`, `work.md`, `stories.md`, `essays.md`,
      `cringe.md`, `arxiv.md`, `cool-facts.md`, `donate.md`
 
 ## 4. Templates & Build
-+ [x] Install & configure Eleventy (static site generator)
-+ [x] Create layout templates in `content/_includes/base.njk` to wrap Markdown content with nav, ads, and footer
-+ [x] Update `package.json` scripts for local dev (`npm run dev`) and production build (`npm run build`)
+- [x] Install & configure Eleventy (static site generator)
+- [x] Create layout templates in `content/_includes/base.njk` to wrap Markdown content with nav, ads, and footer
+- [x] Update `package.json` scripts for local dev (`npm run dev`) and production build (`npm run build`)
 
 ## 5. CI/CD Integration
-+ [x] Add GitHub Actions workflow to build and deploy Eleventy site to GitHub Pages
-+ [x] Add a `.nojekyll` file to the root of the published site to serve `/admin` correctly
+- [x] Add GitHub Actions workflow to build and deploy Eleventy site to GitHub Pages
+- [x] Add a `.nojekyll` file to the root of the published site to serve `/admin` correctly
 
 ## 6. Testing & Documentation
 - [ ] Test editing and publishing content from the CMS UI
