@@ -64,9 +64,6 @@ This will output the static site to the `_site/` directory.
 3. Deploy to GitHub Pages, then visit `https://<your-user>.github.io/<your-repo>/admin/` to log in and edit content via a friendly UI.
 
 ## CI/CD & Deployment
-## CI/CD & Deployment
-**Prerequisite**: Create a GitHub personal access token (PAT) with the `repo` scope, and add it to your repository secrets as `PAT_TOKEN`.
-  
 The `.github/workflows/deploy.yml` GitHub Action will:
 1. Check out the code on pushes to `main`
 2. Install Node.js and dependencies
