@@ -70,7 +70,10 @@ The `.github/workflows/deploy.yml` GitHub Action will:
 3. Run `npm run build` (Eleventy)
 4. Deploy the `_site/` directory to the `gh-pages` branch using `peaceiris/actions-gh-pages`
 
-You only need to push to `main`—GitHub Pages will serve the latest build automatically.
+After the action runs, configure your repository's GitHub Pages settings:
+- Go to **Settings → Pages**
+- Under **Source**, select **Branch: gh-pages**, **Folder: /**
+- Save—your site will then be served from the `gh-pages` branch.
 
 ## Directory Structure
 ```
