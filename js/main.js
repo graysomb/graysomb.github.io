@@ -29,13 +29,20 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Visitor Counter via countapi.xyz
-document.addEventListener('DOMContentLoaded', () => {
+// Use immediate script (deferred) to run after DOM load
+(function() {
   const countEl = document.getElementById('visit-count');
-  if (countEl) {
-    fetch('https://api.countapi.xyz/hit/retro-site/visits')
-      .then(res => res.json())
-      .then(data => { countEl.textContent = data.value; })
-      .catch(err => console.error('Visitor counter failed:', err));
-  }
-});
+  if (!countEl) return;
+  // Use current hostname as namespace, fallback to 'retro-site'
+  const namespace = window.location.hostname || 'retro-site';
+  const key = 'visits';
+  const url = `https://api.countapi.xyz/hit/${namespace}/${key}`;
+  fetch(url)
+    .then(res => {
+      if (!res.ok) throw new Error(`CountAPI response ${res.status}`);
+      return res.json();
+    })
+    .then(data => { countEl.textContent = data.value; })
+    .catch(err => console.error('Visitor counter failed:', err));
+})();
 // TODO: Add marquee polyfill, etc.
