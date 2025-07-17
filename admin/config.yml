@@ -3,6 +3,7 @@ backend:
   repo: graysomb/graysomb.github.io  # TODO: replace with your GitHub repo
   branch: main                             # Branch to update
   open_authoring: true                     # Allow users to fork and open PRs
+  auth_scope: public_repo                 # Request permission to update public repos
   client_id: Ov23litTqiNqI5q4SpHj  # OAuth App Client ID (for GitHub Pages)
 
 publish_mode: editorial_workflow  # Required when open_authoring is true
