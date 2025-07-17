@@ -36,12 +36,12 @@ This file tracks tasks needed to build the early-2000s–style personal website.
 - [ ] Ensure mobile/responsive fallback or allow scrollbars
 
 ## 6. Content Population
-- [ ] **Homepage**: intro text, “Under Construction” GIF, top banner ad
-- [ ] **Work**: list of roles/jobs with decorative boxes
-- [ ] **Stories/Essays/Cringe**: index pages linking to entries
-- [ ] **Arxiv Crawl**: placeholder table of papers, “Last crawled” note
-- [ ] **Cool Facts**: static list or random fact generator script
-- [ ] **Donate**: donate button/link with blinking border
++ [x] **Homepage**: intro text, “Under Construction” GIF, top banner ad
++ [x] **Work**: list of roles/jobs with decorative boxes
++ [x] **Stories/Essays/Cringe**: index pages linking to entries
++ [x] **Arxiv Crawl**: table of papers with links to detail pages, “Last crawled” note
++ [x] **Cool Facts**: static list or random fact generator script
++ [x] **Donate**: donate button/link with blinking border
 
 ## 7. Testing & Deployment
 - [ ] Test visual layout and functionality in multiple browsers

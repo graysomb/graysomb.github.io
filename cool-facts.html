@@ -25,7 +25,24 @@
   </div>
   <main>
     <h1>Cool Facts</h1>
-    <!-- TODO: Add cool facts list or generator -->
+    <ul id="fact-list" class="content-list"></ul>
+    <script>
+      const facts = [
+        "Honey never spoils.",
+        "Bananas are berries, but strawberries aren't.",
+        "Octopuses have three hearts.",
+        "There are more stars in the universe than grains of sand on Earth.",
+        "A day on Venus is longer than a year on Venus."
+      ];
+      document.addEventListener('DOMContentLoaded', () => {
+        const list = document.getElementById('fact-list');
+        facts.sort(() => 0.5 - Math.random()).slice(0, 5).forEach(f => {
+          const li = document.createElement('li');
+          li.textContent = f;
+          list.appendChild(li);
+        });
+      });
+    </script>
   </main>
 </body>
 </html>
