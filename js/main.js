@@ -28,4 +28,14 @@ document.addEventListener('DOMContentLoaded', () => {
     .catch(err => console.error('Failed to load ads manifest:', err));
 });
 
-// TODO: Add visitor counter, marquee polyfill, etc.
+// Visitor Counter via countapi.xyz
+document.addEventListener('DOMContentLoaded', () => {
+  const countEl = document.getElementById('visit-count');
+  if (countEl) {
+    fetch('https://api.countapi.xyz/hit/retro-site/visits')
+      .then(res => res.json())
+      .then(data => { countEl.textContent = data.value; })
+      .catch(err => console.error('Visitor counter failed:', err));
+  }
+});
+// TODO: Add marquee polyfill, etc.
