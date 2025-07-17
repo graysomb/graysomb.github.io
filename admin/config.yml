@@ -1,0 +1,68 @@
+backend:
+  name: github
+  repo: your-github-username/your-repo-name  # TODO: replace with your GitHub repo
+  branch: main                             # Branch to update
+  open_authoring: true                     # Allow users to fork and open PRs
+  # client_id: YOUR_GITHUB_OAUTH_CLIENT_ID  # OAuth App Client ID (for GitHub Pages)
+
+media_folder: "images/uploads"             # Folder for user-uploaded files
+public_folder: "/images/uploads"
+
+collections:
+  - name: "pages"
+    label: "Pages"
+    files:
+      - name: "home"
+        label: "Home"
+        file: "content/home.md"
+        fields:
+          - { name: "title", label: "Title", widget: "string" }
+          - { name: "body", label: "Body", widget: "markdown" }
+      - name: "projects"
+        label: "Projects"
+        file: "content/projects.md"
+        fields:
+          - { name: "title", label: "Title", widget: "string" }
+          - { name: "body", label: "Body", widget: "markdown" }
+      - name: "work"
+        label: "Work"
+        file: "content/work.md"
+        fields:
+          - { name: "title", label: "Title", widget: "string" }
+          - { name: "body", label: "Body", widget: "markdown" }
+      - name: "stories"
+        label: "Stories"
+        file: "content/stories.md"
+        fields:
+          - { name: "title", label: "Title", widget: "string" }
+          - { name: "body", label: "Body", widget: "markdown" }
+      - name: "essays"
+        label: "Essays"
+        file: "content/essays.md"
+        fields:
+          - { name: "title", label: "Title", widget: "string" }
+          - { name: "body", label: "Body", widget: "markdown" }
+      - name: "cringe"
+        label: "Cringe"
+        file: "content/cringe.md"
+        fields:
+          - { name: "title", label: "Title", widget: "string" }
+          - { name: "body", label: "Body", widget: "markdown" }
+      - name: "arxiv"
+        label: "Arxiv Crawl"
+        file: "content/arxiv.md"
+        fields:
+          - { name: "title", label: "Title", widget: "string" }
+          - { name: "body", label: "Body", widget: "markdown" }
+      - name: "cool-facts"
+        label: "Cool Facts"
+        file: "content/cool-facts.md"
+        fields:
+          - { name: "title", label: "Title", widget: "string" }
+          - { name: "body", label: "Body", widget: "markdown" }
+      - name: "donate"
+        label: "Donate"
+        file: "content/donate.md"
+        fields:
+          - { name: "title", label: "Title", widget: "string" }
+          - { name: "body", label: "Body", widget: "markdown" }

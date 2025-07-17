@@ -1,57 +1,37 @@
 # Project Tasks
-This file tracks tasks needed to build the early-2000s–style personal website.
+This file tracks tasks needed to integrate a Git-based CMS (Netlify CMS) for easier content editing.
 
-## 1. Setup & Scaffolding
-- [x] Create project root directories:
-  - `css/`, `js/`, `images/ads/`, `assets/`
-- [x] Scaffold HTML pages:
-  - `index.html`, `projects.html`, `work.html`, `stories.html`,
-    `essays.html`, `cringe.html`, `arxiv.html`, `cool-facts.html`, `donate.html`
-- [x] Create CSS entrypoint: `css/style.css`
-- [x] Create JS entrypoints: `js/main.js`, `js/code-generator.js`
+## 1. Choose CMS Platform
+- [x] Decide on a Git-based CMS (e.g. Netlify CMS, Forestry, TinaCMS)
+- [x] Install CMS dependencies (e.g. `npm install netlify-cms-app`)
 
-## 2. Global Navigation & Layout
-- [x] Implement persistent navigation bar or sidebar on all pages
-- [x] Highlight active page in the navigation
-- [x] Add a reusable ad slot container (`<div id="sidebar-ad">`)
+## 2. Add Admin UI
+- [x] Create `admin/index.html` to initialize Netlify CMS
+- [x] Create `admin/config.yml` with:
+  - `backend`: repository & branch info
+  - `media_folder` & `public_folder` settings
+  - Collections for pages (home, projects, work, stories, essays, cringe, arxiv, cool-facts, donate)
+  - Register a GitHub OAuth App and configure `client_id` in `admin/config.yml` for GitHub Pages backend
 
-## 3. Projects Page
-- [x] Move existing random code generator from `index.html` to `projects.html`
-- [x] Wire up `js/code-generator.js` and attach to a container element
-- [x] Style the generator controls with pixel-style borders
+## 3. Content Structure
+- [ ] Create `content/` directory to hold Markdown files
+- [ ] Convert existing HTML pages to Markdown with front matter:
+  - `home.md`, `projects.md`, `work.md`, `stories.md`, `essays.md`,
+    `cringe.md`, `arxiv.md`, `cool-facts.md`, `donate.md`
 
-## 4. Fake Meme Ad System
-- [x] Implement ad rotator logic in `js/main.js`
-- [x] Load ad filenames dynamically from `js/ads.json`
-- [x] Inject a random meme-ad image into the ad slot on page load
-- [x] Populate `images/ads/` with sample ad assets (e.g. GIFs)
-- [ ] Generate or update `js/ads.json` by running `scripts/generate_ads_manifest.py`
+## 4. Templates & Build
+- [ ] Install & configure a static site generator (Eleventy, Hugo, or Jekyll)
+- [ ] Create layout templates to wrap Markdown content with nav, ads, and footer
+- [ ] Update `package.json` scripts for local dev (`npm run dev`) and production build (`npm run build`)
 
-## 5. Styling & Retro Aesthetics
-- [ ] Set global styles in `css/style.css`:
-  - Background tiled GIF or noise pattern
-  - Pixel-font and system-font fallbacks
-  - Neon-colored borders and tables
-- [ ] Add marquee or CSS animations for “blinky” elements
-- [ ] Ensure mobile/responsive fallback or allow scrollbars
+## 5. CI/CD Integration
+- [ ] Add `netlify.toml` or GitHub Actions to run the build on each commit
+- [ ] Ensure the `/admin` route is served and accessible
 
-## 6. Content Population
-+ [x] **Homepage**: intro text, “Under Construction” GIF, top banner ad
-+ [x] **Work**: list of roles/jobs with decorative boxes
-+ [x] **Stories/Essays/Cringe**: index pages linking to entries
-+ [x] **Arxiv Crawl**: table of papers with links to detail pages, “Last crawled” note
-+ [x] **Cool Facts**: static list or random fact generator script
-+ [x] **Donate**: donate button/link with blinking border
+## 6. Testing & Documentation
+- [ ] Test editing and publishing content from the CMS UI
+- [ ] Document the CMS workflow, file locations, and editorial process for contributors
 
-## 7. Testing & Deployment
-- [ ] Test visual layout and functionality in multiple browsers
-- [ ] Validate links and console for JS errors
-- [ ] Deploy to hosting (e.g. GitHub Pages, Netlify)
-
-## 8. Future Enhancements
-- [ ] Add guestbook with JSON storage or backend
-- [ ] Integrate visitor counter or flat-file log
-- [ ] Animate cursors or add interactive easter eggs
-  
----
-*Update this file as tasks progress.*
+## 7. Future Enhancements
+- [ ] Enable editorial workflow with drafts & previews
+- [ ] Add custom widgets or validation rules in `config.yml`
