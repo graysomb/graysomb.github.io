@@ -14,10 +14,10 @@ This file tracks tasks needed to integrate a Git-based CMS (Netlify CMS) for eas
   - Register a GitHub OAuth App and configure `client_id` in `admin/config.yml` for GitHub Pages backend
 
 ## 3. Content Structure
-- [ ] Create `content/` directory to hold Markdown files
-- [ ] Convert existing HTML pages to Markdown with front matter:
-  - `home.md`, `projects.md`, `work.md`, `stories.md`, `essays.md`,
-    `cringe.md`, `arxiv.md`, `cool-facts.md`, `donate.md`
++- [x] Create `content/` directory to hold Markdown files
++- [x] Convert existing HTML pages to Markdown with front matter:
+   - `home.md`, `projects.md`, `work.md`, `stories.md`, `essays.md`,
+     `cringe.md`, `arxiv.md`, `cool-facts.md`, `donate.md`
 
 ## 4. Templates & Build
 - [ ] Install & configure a static site generator (Eleventy, Hugo, or Jekyll)
