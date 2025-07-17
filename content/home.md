@@ -1,5 +1,7 @@
 ---
 title: "Home"
+layout: base.njk
+permalink: index.html
 ---
 # Welcome to My '02 Tech Cave
 

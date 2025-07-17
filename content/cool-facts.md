@@ -1,5 +1,7 @@
 ---
 title: "Cool Facts"
+layout: base.njk
+permalink: cool-facts.html
 ---
 - Honey never spoils.
 - Bananas are berries, but strawberries aren't.

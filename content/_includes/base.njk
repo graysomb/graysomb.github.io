@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ title }} - Retro Site</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <script src="/js/main.js" defer></script>
+</head>
+<body>
+  <nav>
+    <ul>
+      <li><a href="/" class="{% if title == 'Home' %}active{% endif %}">Home</a></li>
+      <li><a href="/projects.html" class="{% if title == 'Projects' %}active{% endif %}">Projects</a></li>
+      <li><a href="/work.html" class="{% if title == 'Work' %}active{% endif %}">Work</a></li>
+      <li><a href="/stories.html" class="{% if title == 'Stories' %}active{% endif %}">Stories</a></li>
+      <li><a href="/essays.html" class="{% if title == 'Essays' %}active{% endif %}">Essays</a></li>
+      <li><a href="/cringe.html" class="{% if title == 'Cringe' %}active{% endif %}">Cringe</a></li>
+      <li><a href="/arxiv.html" class="{% if title == 'Arxiv Crawl' %}active{% endif %}">Arxiv Crawl</a></li>
+      <li><a href="/cool-facts.html" class="{% if title == 'Cool Facts' %}active{% endif %}">Cool Facts</a></li>
+      <li><a href="/donate.html" class="{% if title == 'Donate' %}active{% endif %}">Donate</a></li>
+      <li class="visit-counter">Visits: <span id="visit-count">0</span></li>
+    </ul>
+  </nav>
+  <div class="banner-ad">LEADERBOARD AD</div>
+  <div id="sidebar-ad" class="ad-box"></div>
+  <main>
+    {{ content | safe }}
+  </main>
+</body>
+</html>

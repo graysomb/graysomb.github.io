@@ -1,5 +1,7 @@
 ---
 title: "Arxiv Crawl"
+layout: base.njk
+permalink: arxiv.html
 ---
 Last crawled: 2025-07-17
 

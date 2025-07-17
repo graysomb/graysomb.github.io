@@ -20,9 +20,9 @@ This file tracks tasks needed to integrate a Git-based CMS (Netlify CMS) for eas
      `cringe.md`, `arxiv.md`, `cool-facts.md`, `donate.md`
 
 ## 4. Templates & Build
-- [ ] Install & configure a static site generator (Eleventy, Hugo, or Jekyll)
-- [ ] Create layout templates to wrap Markdown content with nav, ads, and footer
-- [ ] Update `package.json` scripts for local dev (`npm run dev`) and production build (`npm run build`)
++ [x] Install & configure Eleventy (static site generator)
++ [x] Create layout templates in `content/_includes/base.njk` to wrap Markdown content with nav, ads, and footer
++ [x] Update `package.json` scripts for local dev (`npm run dev`) and production build (`npm run build`)
 
 ## 5. CI/CD Integration
 - [ ] Add `netlify.toml` or GitHub Actions to run the build on each commit

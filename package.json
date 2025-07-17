@@ -1,5 +1,12 @@
 {
   "dependencies": {
     "netlify-cms-app": "^2.15.72"
+  },
+  "devDependencies": {
+    "@11ty/eleventy": "^1.0.0"
+  },
+  "scripts": {
+    "dev": "eleventy --serve --incremental",
+    "build": "eleventy"
   }
 }
