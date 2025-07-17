@@ -21,10 +21,11 @@ This file tracks tasks needed to build the early-2000s–style personal website.
 - [x] Style the generator controls with pixel-style borders
 
 ## 4. Fake Meme Ad System
-- [ ] Implement ad rotator logic in `js/main.js`
-- [ ] Define array of ad filenames + dummy URLs
-- [ ] Randomly inject a meme-ad image into the ad slot on page load
-- [ ] Populate `images/ads/` with sample ad assets (e.g. GIFs)
+- [x] Implement ad rotator logic in `js/main.js`
+- [x] Load ad filenames dynamically from `js/ads.json`
+- [x] Inject a random meme-ad image into the ad slot on page load
+- [x] Populate `images/ads/` with sample ad assets (e.g. GIFs)
+- [ ] Generate or update `js/ads.json` by running `scripts/generate_ads_manifest.py`
 
 ## 5. Styling & Retro Aesthetics
 - [ ] Set global styles in `css/style.css`:
