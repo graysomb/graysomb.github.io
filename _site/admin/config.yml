@@ -1,9 +1,11 @@
 backend:
   name: github
-  repo: your-github-username/your-repo-name  # TODO: replace with your GitHub repo
+  repo: graysomb/graysomb.github.io  # TODO: replace with your GitHub repo
   branch: main                             # Branch to update
   open_authoring: true                     # Allow users to fork and open PRs
-  # client_id: YOUR_GITHUB_OAUTH_CLIENT_ID  # OAuth App Client ID (for GitHub Pages)
+  client_id: Ov23litTqiNqI5q4SpHj  # OAuth App Client ID (for GitHub Pages)
+
+publish_mode: editorial_workflow  # Required when open_authoring is true
 
 media_folder: "images/uploads"             # Folder for user-uploaded files
 public_folder: "/images/uploads"
