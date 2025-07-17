@@ -5,6 +5,8 @@ backend:
   open_authoring: true                     # Allow users to fork and open PRs
   client_id: Ov23litTqiNqI5q4SpHj  # OAuth App Client ID (for GitHub Pages)
 
+publish_mode: editorial_workflow  # Required when open_authoring is true
+
 media_folder: "images/uploads"             # Folder for user-uploaded files
 public_folder: "/images/uploads"
 
