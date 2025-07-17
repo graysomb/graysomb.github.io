@@ -25,8 +25,8 @@ This file tracks tasks needed to integrate a Git-based CMS (Netlify CMS) for eas
 + [x] Update `package.json` scripts for local dev (`npm run dev`) and production build (`npm run build`)
 
 ## 5. CI/CD Integration
-- [ ] Add `netlify.toml` or GitHub Actions to run the build on each commit
-- [ ] Ensure the `/admin` route is served and accessible
++ [x] Add GitHub Actions workflow to build and deploy Eleventy site to GitHub Pages
++ [x] Add a `.nojekyll` file to the root of the published site to serve `/admin` correctly
 
 ## 6. Testing & Documentation
 - [ ] Test editing and publishing content from the CMS UI
