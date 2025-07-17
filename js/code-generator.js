@@ -1,29 +1,30 @@
-/* code-generator.js - random code generator logic */
-// Sample code snippets for generation
-const codeSamples = [
-  "for (let i = 0; i < 10; i++) { console.log(i); }",  
-  "function greet(name) { return `Hello, ${name}!`; }",  
-  "if (x > y) { x = x - y; } else { y = y - x; }",  
-  "const square = n => n * n;",  
-  "let arr = [1,2,3,4].map(n => n * 2);",  
-  "class Person { constructor(name) { this.name = name; } }",  
-  "const promise = new Promise((res, rej) => res('done'));",  
-  "try { doSomething(); } catch (e) { console.error(e); }"
-];
+import { loadPyodide } from "https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.mjs";
 
-function generateRandomCode() {
-  const idx = Math.floor(Math.random() * codeSamples.length);
-  return codeSamples[idx];
+async function initPyodide() {
+  return await loadPyodide({
+    indexURL: "https://cdn.jsdelivr.net/pyodide/v0.23.4/full/"
+  });
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  const btn = document.getElementById('generate-btn');
-  const output = document.getElementById('code-output');
-  if (btn && output) {
-    btn.addEventListener('click', () => {
-      output.textContent = generateRandomCode();
-    });
-    // Generate initial code on load
-    output.textContent = generateRandomCode();
-  }
+window.pyodide = await initPyodide();
+
+// load the Python module into Pyodide's virtual filesystem
+{
+  const resp = await fetch("quine_ast_liv_0.py");
+  const text = await resp.text();
+  window.pyodide.FS.writeFile("quine_ast_liv_0.py", text);
+}
+
+const generateBtn = document.getElementById("generate-btn");
+const output = document.getElementById("output");
+
+generateBtn.addEventListener("click", async () => {
+  const code = `
+import ast
+from quine_ast_liv_0 import generate_random_ast
+node = generate_random_ast(3)
+ast.unparse(node)
+`;
+  const result = await window.pyodide.runPythonAsync(code);
+  output.textContent = result;
 });
