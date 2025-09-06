@@ -35,8 +35,8 @@ nav a:hover, nav a.active {
 /* Ad box */
 .ad-box {
   float: right;
-  width: 200px;
-  height: 200px;
+  width: 400px;
+  height: 400px;
   border: 3px dotted yellow;
   margin: 10px;
   text-align: center;
