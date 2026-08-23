@@ -38,7 +38,20 @@ def main():
         # Extract authors from <strong>Authors:</strong>
         m_auth = re.search(r'<strong>Authors:</strong>\s*(.*?)</p>', content, re.S)
         authors = m_auth.group(1).strip() if m_auth else ''
-        entries.append((fname, title, authors))
+        # Prefer the source label declared by the paper page. This allows the
+        # crawl to include author-hosted and publisher-hosted open-access papers
+        # without presenting their local filename as an arXiv identifier.
+        m_source = re.search(
+            r'<a\s+class="paper-source"\s+href="[^"]+"[^>]*>(.*?)</a>',
+            content,
+            re.S,
+        )
+        if m_source:
+            source_label = m_source.group(1).strip()
+        else:
+            paper_id = os.path.splitext(fname)[0]
+            source_label = f"arXiv:{paper_id}"
+        entries.append((fname, title, authors, source_label))
 
     # Read arxiv.html and replace <tbody> content
     with open(arxiv_html_path, encoding='utf-8') as f:
@@ -64,13 +77,12 @@ def main():
             row_indent = indent + '  '
             cell_indent = indent + '    '
             # Generate rows for each entry
-            for fname, title, authors in entries:
+            for fname, title, authors, source_label in entries:
                 new_lines.append(f"{row_indent}<tr>\n")
                 new_lines.append(f"{cell_indent}<td>{title}</td>\n")
                 new_lines.append(f"{cell_indent}<td>{authors}</td>\n")
                 link = os.path.join('arxiv', fname)
-                paper_id = os.path.splitext(fname)[0]
-                new_lines.append(f"{cell_indent}<td><a href=\"{link}\">arXiv:{paper_id}</a></td>\n")
+                new_lines.append(f"{cell_indent}<td><a href=\"{link}\">{source_label}</a></td>\n")
                 new_lines.append(f"{row_indent}</tr>\n")
             in_tbody = True
             continue
