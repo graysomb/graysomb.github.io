@@ -16,7 +16,7 @@ const he="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEgAAABICAYAAABV7bNHAAAA
         <span>Model</span>
         <select id="model">
           <option value="agentic">Agentic GNCA</option>
-          <option value="hereditary">Hereditary H-II</option>
+          <option value="hereditary" selected>Hereditary H-II</option>
         </select>
       </label>
       <label id="hereditary-speed-wrap" hidden>
