@@ -1,0 +1,2677 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+    <meta name="description" content="Draw a creature, grow it with hereditary Henneberg-II particle dynamics, and survive a seamless ecosystem." />
+    <title>Drawn to Grow</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        --ink: #f4fff8;
+        --muted: #9eb5aa;
+        --panel: rgba(7, 18, 17, 0.88);
+        --line: rgba(180, 255, 220, 0.16);
+        --mint: #79f2bd;
+        --cyan: #65d9ff;
+        --danger: #ff6577;
+        --safe: #7bff99;
+        --amber: #ffd36c;
+      }
+
+      * { box-sizing: border-box; }
+
+      html, body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+        background: #030908;
+        color: var(--ink);
+        overscroll-behavior: none;
+      }
+
+      button { font: inherit; }
+
+      #game {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        display: block;
+        touch-action: none;
+        cursor: crosshair;
+      }
+
+      .hud {
+        position: fixed;
+        z-index: 5;
+        top: max(12px, env(safe-area-inset-top));
+        left: max(12px, env(safe-area-inset-left));
+        right: max(12px, env(safe-area-inset-right));
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        pointer-events: none;
+      }
+
+      .brand, .stats, .redraw-wrap, .settings-button, .settings-panel {
+        border: 1px solid var(--line);
+        background: linear-gradient(180deg, rgba(13, 31, 28, 0.92), rgba(5, 14, 13, 0.82));
+        box-shadow: 0 16px 44px rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(14px);
+      }
+
+      .brand {
+        border-radius: 14px;
+        padding: 10px 14px;
+        min-width: 178px;
+      }
+
+      .brand strong {
+        display: block;
+        font-size: 14px;
+        letter-spacing: 0.13em;
+        text-transform: uppercase;
+      }
+
+      .brand span {
+        display: block;
+        margin-top: 3px;
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(64px, 1fr));
+        border-radius: 16px;
+        overflow: hidden;
+      }
+
+      .stat {
+        min-width: 78px;
+        padding: 9px 13px;
+        border-right: 1px solid var(--line);
+        text-align: center;
+      }
+
+      .stat:last-child { border-right: 0; }
+      .stat span { display: block; color: var(--muted); font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; }
+      .stat strong { display: block; margin-top: 2px; font-size: 17px; font-variant-numeric: tabular-nums; }
+
+      .redraw-wrap {
+        border-radius: 14px;
+        padding: 7px;
+        pointer-events: auto;
+      }
+
+      .hud-actions { display: flex; align-items: flex-start; gap: 8px; pointer-events: auto; }
+      .settings-wrap { position: relative; }
+      .button.settings-button { width: 44px; min-height: 44px; padding: 0; border-radius: 14px; font-size: 19px; line-height: 1; }
+      .settings-panel {
+        position: absolute;
+        top: calc(100% + 8px);
+        right: 0;
+        width: min(280px, calc(100vw - 24px));
+        padding: 14px;
+        border-radius: 16px;
+        color: var(--ink);
+      }
+      .settings-panel[hidden] { display: none; }
+      .settings-panel h2 { margin: 0 0 12px; font-size: 16px; letter-spacing: 0; }
+      .setting-toggle { display: flex; align-items: center; justify-content: space-between; gap: 14px; cursor: pointer; }
+      .setting-toggle + .setting-toggle { margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.09); }
+      .setting-toggle span { min-width: 0; }
+      .setting-toggle strong, .setting-toggle small { display: block; }
+      .setting-toggle strong { font-size: 13px; }
+      .setting-toggle small { margin-top: 3px; color: var(--muted); font-size: 11px; line-height: 1.35; }
+      .setting-toggle input {
+        appearance: none;
+        flex: 0 0 auto;
+        position: relative;
+        width: 42px;
+        height: 24px;
+        margin: 0;
+        border: 1px solid rgba(255,255,255,.2);
+        border-radius: 999px;
+        background: rgba(255,255,255,.08);
+        cursor: pointer;
+        transition: border-color 140ms ease, background 140ms ease;
+      }
+      .setting-toggle input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--muted); transition: transform 140ms ease, background 140ms ease; }
+      .setting-toggle input:checked { border-color: rgba(121,242,189,.72); background: rgba(121,242,189,.2); }
+      .setting-toggle input:checked::after { transform: translateX(18px); background: var(--mint); }
+      .setting-toggle input:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+
+      .button {
+        min-height: 42px;
+        padding: 0 16px;
+        border: 1px solid rgba(255, 255, 255, 0.13);
+        border-radius: 11px;
+        color: var(--ink);
+        background: rgba(255, 255, 255, 0.065);
+        cursor: pointer;
+        transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
+      }
+
+      .button:hover { border-color: rgba(255,255,255,.28); background: rgba(255,255,255,.11); }
+      .button:active { transform: translateY(1px) scale(.985); }
+      .button:disabled { opacity: .4; cursor: not-allowed; }
+      .button-primary { color: #03100b; border-color: transparent; background: linear-gradient(135deg, var(--mint), #48cfff); font-weight: 800; }
+      .button-danger { color: #ffdce2; border-color: rgba(255, 101, 119, .32); background: rgba(255, 101, 119, .12); }
+      .button-small { min-height: 36px; padding: 0 12px; font-size: 13px; }
+
+      .threat-key {
+        position: fixed;
+        z-index: 4;
+        left: max(12px, env(safe-area-inset-left));
+        bottom: max(12px, env(safe-area-inset-bottom));
+        padding: 8px 11px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: rgba(4, 13, 12, .72);
+        color: var(--muted);
+        font-size: 11px;
+        pointer-events: none;
+        backdrop-filter: blur(10px);
+      }
+
+      .threat-key i { display: inline-block; width: 7px; height: 7px; margin: 0 4px 0 8px; border-radius: 50%; }
+      .threat-key[hidden] { display: none; }
+      .threat-key i:first-child { margin-left: 0; }
+      .safe-dot { background: var(--safe); box-shadow: 0 0 8px var(--safe); }
+      .danger-dot { background: var(--danger); box-shadow: 0 0 8px var(--danger); }
+
+      .control-hint {
+        position: fixed;
+        z-index: 4;
+        left: 50%;
+        bottom: max(12px, env(safe-area-inset-bottom));
+        padding: 8px 12px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: rgba(4, 13, 12, .72);
+        color: var(--muted);
+        font-size: 11px;
+        letter-spacing: .03em;
+        pointer-events: none;
+        backdrop-filter: blur(10px);
+        transform: translateX(-50%);
+      }
+      .threat-key:not([hidden]) + .control-hint { bottom: calc(max(12px, env(safe-area-inset-bottom)) + 42px); }
+
+      .toast {
+        position: fixed;
+        z-index: 12;
+        left: 50%;
+        bottom: calc(max(62px, env(safe-area-inset-bottom) + 52px));
+        max-width: min(88vw, 520px);
+        padding: 10px 16px;
+        border: 1px solid rgba(255,255,255,.14);
+        border-radius: 999px;
+        background: rgba(7, 18, 17, .9);
+        box-shadow: 0 12px 30px rgba(0,0,0,.35);
+        color: var(--ink);
+        text-align: center;
+        transform: translate(-50%, 16px);
+        opacity: 0;
+        transition: opacity 180ms ease, transform 180ms ease;
+        pointer-events: none;
+      }
+
+      .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+      .overlay {
+        position: fixed;
+        z-index: 20;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        padding: max(18px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
+        background:
+          radial-gradient(circle at 50% 22%, rgba(61, 205, 155, .14), transparent 38%),
+          rgba(2, 8, 7, .93);
+        backdrop-filter: blur(12px);
+      }
+
+      .overlay[hidden] { display: none; }
+
+      .dialog {
+        width: min(96vw, 900px);
+        max-height: 94vh;
+        overflow: auto;
+        border: 1px solid rgba(184, 255, 222, .18);
+        border-radius: 24px;
+        background: linear-gradient(155deg, rgba(15, 35, 31, .96), rgba(5, 14, 13, .98));
+        box-shadow: 0 35px 100px rgba(0,0,0,.52);
+      }
+
+      .draw-dialog { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(250px, .8fr); overflow: auto; overscroll-behavior: contain; }
+      .draw-stage { padding: 18px; border-right: 1px solid var(--line); }
+      .draw-side { padding: 28px; display: flex; flex-direction: column; justify-content: center; }
+
+      .eyebrow { margin: 0 0 8px; color: var(--mint); font-size: 11px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+      h1, h2 { margin: 0; letter-spacing: -.035em; line-height: 1; }
+      h1 { font-size: clamp(36px, 6vw, 68px); }
+      h2 { font-size: clamp(30px, 5vw, 52px); }
+      .lede { margin: 16px 0 0; color: var(--muted); line-height: 1.55; }
+      .game-rule { margin: 14px 0 0; padding: 10px 12px; border: 1px solid rgba(121,242,189,.2); border-radius: 11px; background: rgba(121,242,189,.07); color: var(--ink); font-size: 13px; line-height: 1.4; }
+
+      .draw-frame {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 1;
+        max-height: min(70vh, 620px);
+        border: 1px solid rgba(255,255,255,.13);
+        border-radius: 18px;
+        overflow: hidden;
+        background:
+          linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px),
+          #06100e;
+        background-size: 24px 24px;
+      }
+
+      #draw-canvas, #draw-preview { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
+      #draw-preview { pointer-events: none; }
+      .drag-direction {
+        position: absolute;
+        z-index: 2;
+        top: 10px;
+        right: 10px;
+        display: grid;
+        justify-items: center;
+        gap: 5px;
+        padding: 7px 9px;
+        border: 1px solid rgba(101,217,255,.3);
+        border-radius: 10px;
+        background: rgba(3,12,11,.7);
+        color: rgba(180,235,255,.9);
+        font-size: 9px;
+        font-weight: 800;
+        letter-spacing: .12em;
+        text-transform: uppercase;
+        pointer-events: none;
+        backdrop-filter: blur(7px);
+      }
+      .drag-direction i { position: relative; display: block; width: 58px; height: 2px; border-radius: 999px; background: currentColor; box-shadow: 0 0 8px rgba(101,217,255,.55); }
+      .drag-direction i::before, .drag-direction i::after { content: ""; position: absolute; top: 50%; width: 7px; height: 7px; border-top: 2px solid currentColor; border-right: 2px solid currentColor; }
+      .drag-direction i::before { left: -1px; transform: translateY(-50%) rotate(-135deg); }
+      .drag-direction i::after { right: -1px; transform: translateY(-50%) rotate(45deg); }
+      .toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+      .tool-active { border-color: var(--mint); color: var(--mint); background: rgba(121, 242, 189, .1); }
+      .brush-row { margin-top: 18px; }
+      .brush-row label { display: flex; justify-content: space-between; color: var(--muted); font-size: 12px; }
+      input[type="range"] { width: 100%; accent-color: var(--mint); }
+
+      .draw-actions { display: grid; gap: 10px; margin-top: 24px; }
+      .error { min-height: 42px; margin: 14px 0 0; color: #ff9ca9; font-size: 13px; line-height: 1.45; }
+      .tips { margin: 22px 0 0; padding: 0; list-style: none; color: var(--muted); font-size: 13px; line-height: 1.6; }
+      .tips li::before { content: "·"; margin-right: 8px; color: var(--mint); }
+
+      .assembly-card, .gameover-card { width: min(92vw, 540px); padding: 36px; text-align: center; }
+      .creature-select-card { width: min(94vw, 820px); padding: 30px; text-align: center; }
+      .creature-choices { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-top: 24px; }
+      .creature-choice { display: grid; gap: 10px; justify-items: center; padding: 16px; border: 1px solid var(--line); border-radius: 18px; background: rgba(255,255,255,.035); color: var(--ink); cursor: pointer; text-align: center; }
+      .creature-choice:hover:not(:disabled), .creature-choice:focus-visible { border-color: var(--mint); background: rgba(121,242,189,.08); transform: translateY(-2px); }
+      .creature-choice:disabled { opacity: .48; cursor: wait; }
+      .creature-choice canvas { width: 100%; max-width: 190px; aspect-ratio: 1; border-radius: 13px; background: #03100d; image-rendering: auto; }
+      .creature-choice strong { font-size: 18px; }
+      .creature-choice span { color: var(--muted); font-size: 12px; line-height: 1.45; }
+      .assembly-orbit { position: relative; width: 130px; height: 130px; margin: 26px auto; }
+      .assembly-orbit i { position: absolute; width: 12px; height: 12px; border-radius: 50%; background: var(--mint); box-shadow: 0 0 16px var(--mint); animation: orbit 1.7s linear infinite; }
+      .assembly-orbit i:nth-child(2) { animation-delay: -.42s; background: var(--cyan); }
+      .assembly-orbit i:nth-child(3) { animation-delay: -.84s; }
+      .assembly-orbit i:nth-child(4) { animation-delay: -1.26s; background: var(--amber); }
+      @keyframes orbit { from { transform: translate(59px, 59px) rotate(0deg) translateX(48px); } to { transform: translate(59px, 59px) rotate(360deg) translateX(48px); } }
+      .progress { height: 7px; margin: 18px 0 9px; border-radius: 999px; overflow: hidden; background: rgba(255,255,255,.08); }
+      .progress span { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--mint), var(--cyan)); transition: width 120ms linear; }
+      .assembly-count { color: var(--muted); font-variant-numeric: tabular-nums; }
+      .gameover-card .score { margin: 28px 0; font-size: 64px; font-weight: 900; color: var(--mint); }
+      .gameover-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+      .joystick {
+        position: fixed;
+        z-index: 9;
+        width: 112px;
+        height: 112px;
+        border: 1px solid rgba(255,255,255,.18);
+        border-radius: 50%;
+        background: rgba(6, 18, 16, .38);
+        box-shadow: inset 0 0 28px rgba(121,242,189,.05);
+        transform: translate(-50%, -50%);
+        pointer-events: none;
+      }
+
+      .joystick[hidden] { display: none; }
+      .joystick i { position: absolute; left: 50%; top: 50%; width: 42px; height: 42px; border-radius: 50%; background: rgba(121,242,189,.36); border: 1px solid rgba(121,242,189,.8); transform: translate(-50%, -50%); }
+
+      @media (max-width: 760px) {
+        .overlay { display: block; overflow-y: auto; }
+        .brand { display: none; }
+        .hud { align-items: stretch; }
+        .stats { flex: 1; grid-template-columns: repeat(4, 1fr); }
+        .stat { min-width: 0; padding: 8px 5px; }
+        .stat strong { font-size: 15px; }
+        .redraw-wrap { padding: 5px; }
+        #redraw { min-height: 39px; padding: 0 10px; font-size: 12px; }
+        .button.settings-button { width: 39px; min-height: 39px; }
+        .draw-dialog { grid-template-columns: 1fr; max-height: none; margin: 0 auto; overflow: visible; }
+        .draw-stage { border-right: 0; border-bottom: 1px solid var(--line); padding: 10px; }
+        .draw-side { padding: 16px; justify-content: flex-start; }
+        .draw-side h1 { font-size: clamp(28px, 9vw, 42px); }
+        .draw-frame { max-height: 42vh; }
+        .toolbar { gap: 6px; }
+        .toolbar .button-small { min-height: 32px; padding: 0 9px; font-size: 12px; }
+        .tips { display: none; }
+        .lede { margin-top: 10px; }
+        .brush-row { margin-top: 10px; }
+        .draw-actions { position: sticky; z-index: 3; bottom: max(4px, env(safe-area-inset-bottom)); margin: 12px -8px 0; padding: 8px; grid-template-columns: 1fr 1fr; border: 1px solid var(--line); border-radius: 14px; background: rgba(5,14,13,.94); backdrop-filter: blur(12px); }
+        .draw-actions .button-primary { grid-column: 1 / -1; }
+        .gameover-actions { grid-template-columns: 1fr; }
+        .creature-choices { grid-template-columns: 1fr; }
+        .creature-choice { grid-template-columns: 92px 1fr; align-items: center; justify-items: start; text-align: left; }
+        .creature-choice canvas { grid-row: 1 / 3; width: 92px; }
+        .creature-select-card { width: 100%; padding: 20px 16px; }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="game" aria-label="Hereditary particle creature ecosystem"></canvas>
+
+    <header class="hud" aria-live="polite">
+      <div class="brand"><strong>Drawn to Grow</strong><span>H‑II particle ecosystem</span></div>
+      <div class="stats">
+        <div class="stat"><span>Particles</span><strong id="size">24</strong></div>
+        <div class="stat"><span>Eaten</span><strong id="eaten">0</strong></div>
+        <div class="stat"><span>Best</span><strong id="best">24</strong></div>
+        <div class="stat"><span>Redraws</span><strong id="tokens">0</strong></div>
+      </div>
+      <div class="hud-actions">
+        <div class="redraw-wrap"><button class="button button-small" id="redraw" type="button" disabled>Redraw · 0</button></div>
+        <div class="settings-wrap" id="settings-wrap">
+          <button class="button settings-button" id="settings-button" type="button" aria-label="Settings" aria-controls="settings-panel" aria-expanded="false" title="Settings">&#9881;</button>
+          <div class="settings-panel" id="settings-panel" aria-label="Game settings" hidden>
+            <h2>Settings</h2>
+            <label class="setting-toggle" for="debug-overlays">
+              <span><strong>Creature debug overlays</strong><small>Show NPC names, particle counts, threat outlines, and the size legend.</small></span>
+              <input id="debug-overlays" type="checkbox" />
+            </label>
+            <label class="setting-toggle" for="enemy-player-preference">
+              <span><strong>Enemies prefer player</strong><small>Make the player twice as interesting as an equivalent NPC target.</small></span>
+              <input id="enemy-player-preference" type="checkbox" checked />
+            </label>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="threat-key" id="threat-key" hidden><i class="safe-dot"></i>smaller — eat <i class="danger-dot"></i>larger — flee</div>
+    <div class="control-hint">Drag with mouse or touch · Arrow keys / WASD</div>
+    <div class="toast" id="toast" role="status"></div>
+    <div class="joystick" id="joystick" hidden><i></i></div>
+
+    <section class="overlay" id="creature-select-overlay" aria-modal="true" role="dialog" aria-labelledby="creature-select-title">
+      <div class="dialog creature-select-card">
+        <p class="eyebrow" id="creature-select-eyebrow">Choose your starting species</p>
+        <h1 id="creature-select-title">How will you move?</h1>
+        <p class="lede">Start with one of the same hereditary creatures used by the ecosystem. Earn a redraw to create your own design later.</p>
+        <div class="creature-choices">
+          <button class="creature-choice" type="button" data-archetype="walker" disabled><canvas width="144" height="144" aria-hidden="true"></canvas><strong>Walker</strong><span>Opposed feet grip while a muscle body pushes forward.</span></button>
+          <button class="creature-choice" type="button" data-archetype="swimmer" disabled><canvas width="144" height="144" aria-hidden="true"></canvas><strong>Swimmer</strong><span>Muscle A and B bend a streamlined body through the fluid.</span></button>
+          <button class="creature-choice" type="button" data-archetype="worm" disabled><canvas width="144" height="144" aria-hidden="true"></canvas><strong>Worm</strong><span>A long wave-muscle body undulates continuously.</span></button>
+        </div>
+        <p class="error" id="creature-select-error" role="alert"></p>
+      </div>
+    </section>
+
+    <section class="overlay" id="draw-overlay" hidden aria-modal="true" role="dialog">
+      <div class="dialog draw-dialog">
+        <div class="draw-stage">
+          <div class="draw-frame">
+            <canvas id="draw-canvas" width="576" height="576" aria-label="Draw your creature silhouette"></canvas>
+            <canvas id="draw-preview" width="576" height="576" aria-hidden="true"></canvas>
+            <div class="drag-direction" role="img" aria-label="Fluid drag axis runs horizontally across the drawing"><span>Drag axis</span><i></i></div>
+          </div>
+          <div class="toolbar" aria-label="Drawing tools">
+            <button class="button button-small tool-active" id="pen" type="button">Body</button>
+            <button class="button button-small" id="muscle" type="button">Wave</button>
+            <button class="button button-small" id="muscle-a" type="button">Muscle A</button>
+            <button class="button button-small" id="muscle-b" type="button">Muscle B</button>
+            <button class="button button-small" id="foot" type="button">Foot A</button>
+            <button class="button button-small" id="foot-b" type="button">Foot B</button>
+            <button class="button button-small" id="eraser" type="button">Erase</button>
+            <button class="button button-small" id="undo" type="button">Undo</button>
+            <button class="button button-small button-danger" id="clear" type="button">Clear</button>
+          </div>
+        </div>
+        <div class="draw-side">
+          <p class="eyebrow" id="draw-eyebrow">24 particles · one connected body</p>
+          <h1 id="draw-title">Draw what you want to become.</h1>
+          <p class="lede">Pink muscles make waves; orange A and blue B oppose each other. Green Foot A and turquoise Foot B grip on opposite half-cycles.</p>
+          <p class="game-rule">Touch small creatures to eat, touch bigger to be eaten.</p>
+          <div class="brush-row">
+            <label for="brush"><span>Brush size</span><span id="brush-value">42</span></label>
+            <input id="brush" type="range" min="18" max="84" value="42" />
+          </div>
+          <p class="error" id="draw-error" role="alert"></p>
+          <div class="draw-actions">
+            <button class="button" id="cancel-draw" type="button" hidden>Cancel</button>
+            <button class="button button-primary" id="grow" type="button">Grow my creature</button>
+          </div>
+          <ul class="tips">
+            <li>Arrow keys or WASD choose where you face.</li>
+            <li>On a phone, drag toward the desired heading.</li>
+            <li>Muscle deformation provides your propulsion.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="overlay" id="assembly-overlay" hidden aria-live="polite">
+      <div class="dialog assembly-card">
+        <p class="eyebrow">Hereditary Henneberg‑II</p>
+        <h2 id="assembly-title">Preparing your creature</h2>
+        <div class="assembly-orbit" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+        <div class="progress"><span id="assembly-bar"></span></div>
+        <div class="assembly-count" id="assembly-count">Validating the mask…</div>
+      </div>
+    </section>
+
+    <section class="overlay" id="gameover-overlay" hidden aria-modal="true" role="dialog">
+      <div class="dialog gameover-card">
+        <p class="eyebrow">Consumed by the ecosystem</p>
+        <h2>Your shape returns to the field.</h2>
+        <div class="score" id="final-size">24</div>
+        <p class="lede" id="final-copy">You reached 24 particles.</p>
+        <div class="gameover-actions">
+          <button class="button button-primary" id="restart" type="button">Restart same creature</button>
+          <button class="button" id="new-creature" type="button">Choose another creature</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="overlay" id="conquered-overlay" hidden aria-modal="true" role="dialog" aria-labelledby="conquered-title">
+      <div class="dialog gameover-card">
+        <p class="eyebrow">Apex reached</p>
+        <h2 id="conquered-title">You have conquered nature!</h2>
+        <p class="lede">You are larger than any creature nature can produce. Keep growing if you dare.</p>
+        <div class="gameover-actions">
+          <button class="button button-primary" id="conquered-okay" type="button">Okay</button>
+        </div>
+      </div>
+    </section>
+
+    <script id="physics-worker" type="text/plain">
+"use strict";
+
+const CONFIG = Object.freeze({
+  maskSize: 72,
+  worldSize: 192,
+  startCount: 24,
+  blueprintCount: 240,
+  worldBudget: 900,
+  radius: 0.42,
+  dt: 1 / 60,
+  damping: 0.985,
+  rotationalDamping: 0.94,
+  fluidDragAxisOffset: Math.PI/2,
+  fluidDragAlongAxis: 0.45,
+  fluidDragAcrossAxis: 3.6,
+  localDragAxisBlend: 0.32,
+  bondStiffness: 0.38,
+  muscleAmplitude: 0.28,
+  muscleFrequency: 2.5,
+  pbdIterations: 5,
+  latticeSpacing: 0.95,
+  jitter: 0.018,
+  dnaNeighborRadius: 2.08,
+  minLength: 0.42,
+  maxLength: 3.15,
+  minimumParentArea: 0.035,
+  positionTolerance: 1e-7,
+  bondMaskThreshold: 0.2,
+  bondMaskSampleStep: 0.25,
+  contactRadius: 1.08,
+  maxSpeed: 32,
+  playerTurnGain: 40,
+  playerMaxTurnAcceleration: 32,
+  npcTurnGain: 32,
+  npcMaxTurnAcceleration: 28,
+  npcAggroRadius: 72,
+  npcFoodRadius: 44,
+  npcPredatorAvoidance: 2.8,
+  npcPreyPursuit: 1,
+  npcFoodAttraction: 0.35,
+  npcPlayerPreference: 2,
+  npcTargetLockTicks: 150,
+  npcFoodTargetLockTicks: 90,
+  npcTargetSwitchRatio: 1.45,
+  npcMinimumSize: 8,
+  npcMaximumSpawnSize: 900,
+  npcSizePower: 2.25,
+  deathFoodFraction: 0.5,
+  npcTravelBlend: 0.018,
+  npcTravelHeadingThreshold: 0.12,
+});
+
+const clamp = (value, low, high) => Math.max(low, Math.min(high, value));
+const wrap = (value) => ((value % CONFIG.worldSize) + CONFIG.worldSize) % CONFIG.worldSize;
+const wrapDelta = (value) => {
+  const half = CONFIG.worldSize * 0.5;
+  if (value > half) return value - CONFIG.worldSize;
+  if (value < -half) return value + CONFIG.worldSize;
+  return value;
+};
+const shortestAngleDelta = (target, current) => Math.atan2(Math.sin(target-current),Math.cos(target-current));
+const edgeKey = (a, b) => a < b ? `${a}:${b}` : `${b}:${a}`;
+const doubleArea = (a, b, c) => Math.abs((b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x));
+const compareCreatureSizes = (first, second) => first === second ? 0 : first > second ? 1 : -1;
+const deathFoodCount = (count) => count<=0?0:Math.max(1,Math.round(count*CONFIG.deathFoodFraction));
+const earnedRedrawTokens = (lifetime, available, spent) => Math.max(0, Math.floor(lifetime / 24) - available - spent);
+const muscleRestMultiplier = (active, currentTick, phase = 0) => active ? 1 + CONFIG.muscleAmplitude * Math.sin(currentTick * CONFIG.dt * Math.PI * 2 * CONFIG.muscleFrequency + phase) : 1;
+const musclePhase = (material, sampleX = 0, sampleY = 0, creatureId = 0) => {
+  const base=creatureId*.73;
+  if(material===1)return base+sampleX*.9+sampleY*.23;
+  if(material===2)return base;
+  if(material===3)return base+Math.PI;
+  return base;
+};
+const isMuscleMaterial = (material) => material>=1&&material<=3;
+const isFootMaterial = (material) => material===4||material===5;
+const footIsPlanted = (material, currentTick, creatureId = 0) => Math.sin(currentTick*CONFIG.dt*Math.PI*2*CONFIG.muscleFrequency+creatureId*.73+(material===5?Math.PI:0))>=0;
+const powerLawQuantile = (unit,minimum,maximum,exponent) => {
+  const u=clamp(unit,0,1),low=Math.max(1e-9,minimum),high=Math.max(low,maximum);if(high===low)return low;
+  if(Math.abs(exponent-1)<1e-9)return Math.exp(Math.log(low)+u*(Math.log(high)-Math.log(low)));
+  const power=1-exponent;return Math.pow(Math.pow(low,power)+u*(Math.pow(high,power)-Math.pow(low,power)),1/power);
+};
+const sampleNpcSize = (unit,maximum=CONFIG.npcMaximumSpawnSize) => Math.round(powerLawQuantile(unit,CONFIG.npcMinimumSize,clamp(maximum,CONFIG.npcMinimumSize,CONFIG.npcMaximumSpawnSize),CONFIG.npcSizePower));
+const npcGoalWeight = (ownSize, otherSize, distance) => {
+  const proximity=clamp(1-distance/CONFIG.npcAggroRadius,0,1);if(!proximity)return 0;
+  if(otherSize>ownSize)return -CONFIG.npcPredatorAvoidance*proximity*Math.sqrt(otherSize/Math.max(1,ownSize));
+  if(otherSize<ownSize)return CONFIG.npcPreyPursuit*proximity*(.65+.35*otherSize/Math.max(1,ownSize));
+  return -.35*proximity;
+};
+const npcTargetScore = (ownSize, otherSize, distance, isPlayer = false, playerPreference = true) => Math.abs(npcGoalWeight(ownSize,otherSize,distance))*(isPlayer&&playerPreference?CONFIG.npcPlayerPreference:1);
+const shouldSwitchNpcTarget = (currentScore,currentThreat,bestScore,bestThreat,lockUntil,currentTick) => {
+  if(!(bestScore>0))return false;
+  if(!(currentScore>0))return true;
+  if(bestThreat&&!currentThreat)return true;
+  if(currentThreat&&!bestThreat)return false;
+  return currentTick>=lockUntil||bestScore>currentScore*CONFIG.npcTargetSwitchRatio;
+};
+const npcSteeringHeading = (bodyAngle,forwardOffset,travelX,travelY) => Math.hypot(travelX,travelY)>=CONFIG.npcTravelHeadingThreshold?Math.atan2(travelY,travelX):bodyAngle+forwardOffset;
+const collisionCorrection = (dx, dy, minimum) => {
+  const separation = Math.hypot(dx, dy);
+  if (separation >= minimum || separation < 1e-7) return null;
+  const amount = (minimum - separation) * 0.5;
+  return { first: { x: -dx / separation * amount, y: -dy / separation * amount }, second: { x: dx / separation * amount, y: dy / separation * amount } };
+};
+const anisotropicDragAxisVelocity = (vx,vy,axisX,axisY,step=CONFIG.dt) => {
+  const axisLength=Math.hypot(axisX,axisY)||1;axisX/=axisLength;axisY/=axisLength;const crossX=-axisY,crossY=axisX;
+  const along=vx*axisX+vy*axisY,across=vx*crossX+vy*crossY;
+  const alongRetention=Math.exp(-CONFIG.fluidDragAlongAxis*step),acrossRetention=Math.exp(-CONFIG.fluidDragAcrossAxis*step);
+  return{x:axisX*along*alongRetention+crossX*across*acrossRetention,y:axisY*along*alongRetention+crossY*across*acrossRetention};
+};
+const anisotropicDragVelocity = (vx,vy,rotation,step=CONFIG.dt) => {
+  // Begin at local mask top (angle -PI/2), apply the experimental 90-degree
+  // offset, then rotate the resulting drag axis with the creature.
+  const axisAngle=rotation-Math.PI/2+CONFIG.fluidDragAxisOffset;
+  return anisotropicDragAxisVelocity(vx,vy,Math.cos(axisAngle),Math.sin(axisAngle),step);
+};
+const localDragAxisFromDeformation = (accumulator,referenceX,referenceY,fallbackX,fallbackY) => {
+  const aXX=accumulator.dragAxx||0,aXY=accumulator.dragAxy||0,aYY=accumulator.dragAyy||0,bXX=accumulator.dragBxx||0,bXY=accumulator.dragBxy||0,bYX=accumulator.dragByx||0,bYY=accumulator.dragByy||0;
+  const determinant=aXX*aYY-aXY*aXY,trace=aXX+aYY;let x=0,y=0;
+  if(determinant>Math.max(1e-10,trace*trace*1e-5)){
+    const fXX=(bXX*aYY-bXY*aXY)/determinant,fXY=(bXY*aXX-bXX*aXY)/determinant;
+    const fYX=(bYX*aYY-bYY*aXY)/determinant,fYY=(bYY*aXX-bYX*aXY)/determinant;
+    x=fXX*referenceX+fXY*referenceY;y=fYX*referenceX+fYY*referenceY;
+  }else{
+    const denominator=referenceX*(aXX*referenceX+aXY*referenceY)+referenceY*(aXY*referenceX+aYY*referenceY);
+    if(denominator>1e-10){x=(bXX*referenceX+bXY*referenceY)/denominator;y=(bYX*referenceX+bYY*referenceY)/denominator;}
+  }
+  const length=Math.hypot(x,y);if(length<1e-7)return{x:fallbackX,y:fallbackY};x/=length;y/=length;
+  if(x*fallbackX+y*fallbackY<0){x=-x;y=-y;}return{x,y};
+};
+
+class Rng {
+  constructor(seed = 1) { this.state = (seed >>> 0) || 1; }
+  next() {
+    let t = this.state += 0x6d2b79f5;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  }
+  signed() { return this.next() * 2 - 1; }
+  int(maximum) { return Math.floor(this.next() * Math.max(1, maximum)); }
+  range(low, high) { return low + (high - low) * this.next(); }
+}
+
+const binaryDilate = (source) => {
+  const size = CONFIG.maskSize;
+  const result = new Uint8Array(source.length);
+  for (let y = 0; y < size; y += 1) for (let x = 0; x < size; x += 1) {
+    let on = 0;
+    for (let oy = -1; oy <= 1 && !on; oy += 1) for (let ox = -1; ox <= 1; ox += 1) {
+      const px = x + ox;
+      const py = y + oy;
+      if (px >= 0 && px < size && py >= 0 && py < size && source[py * size + px]) { on = 1; break; }
+    }
+    result[y * size + x] = on;
+  }
+  return result;
+};
+
+const binaryErode = (source) => {
+  const size = CONFIG.maskSize;
+  const result = new Uint8Array(source.length);
+  for (let y = 0; y < size; y += 1) for (let x = 0; x < size; x += 1) {
+    let on = 1;
+    for (let oy = -1; oy <= 1 && on; oy += 1) for (let ox = -1; ox <= 1; ox += 1) {
+      const px = x + ox;
+      const py = y + oy;
+      if (px < 0 || px >= size || py < 0 || py >= size || !source[py * size + px]) { on = 0; break; }
+    }
+    result[y * size + x] = on;
+  }
+  return result;
+};
+
+const closeMask = (source) => binaryErode(binaryDilate(source));
+
+const analyzeMask = (mask) => {
+  const size = CONFIG.maskSize;
+  const visited = new Uint8Array(mask.length);
+  const components = [];
+  let minX = size, minY = size, maxX = -1, maxY = -1, area = 0;
+  for (let index = 0; index < mask.length; index += 1) {
+    if (!mask[index]) continue;
+    area += 1;
+    const x = index % size;
+    const y = Math.floor(index / size);
+    minX = Math.min(minX, x); minY = Math.min(minY, y); maxX = Math.max(maxX, x); maxY = Math.max(maxY, y);
+    if (visited[index]) continue;
+    const queue = [index];
+    visited[index] = 1;
+    let count = 0;
+    while (queue.length) {
+      const current = queue.pop();
+      count += 1;
+      const cx = current % size;
+      const cy = Math.floor(current / size);
+      for (const [ox, oy] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+        const nx = cx + ox, ny = cy + oy;
+        const ni = ny * size + nx;
+        if (nx >= 0 && nx < size && ny >= 0 && ny < size && mask[ni] && !visited[ni]) {
+          visited[ni] = 1;
+          queue.push(ni);
+        }
+      }
+    }
+    components.push(count);
+  }
+  components.sort((a, b) => b - a);
+  return { area, components, minX, minY, maxX, maxY };
+};
+
+const validateMask = (raw) => {
+  const mask = closeMask(raw);
+  const stats = analyzeMask(mask);
+  if (stats.area < 300) throw new Error("Make the body thicker or larger so it can support dense hereditary growth.");
+  if ((stats.components[1] || 0) > 3) throw new Error("Connect every part of the creature into one continuous body.");
+  if (stats.maxX - stats.minX < 12 || stats.maxY - stats.minY < 8) throw new Error("Give the creature a little more width and height.");
+  return { mask, stats };
+};
+
+const maskAt = (mask, x, y) => {
+  const size = CONFIG.maskSize;
+  const cx = clamp(x, 0, size - 1), cy = clamp(y, 0, size - 1);
+  const x0 = Math.floor(cx), y0 = Math.floor(cy);
+  const x1 = Math.min(size - 1, x0 + 1), y1 = Math.min(size - 1, y0 + 1);
+  const tx = cx - x0, ty = cy - y0;
+  return (mask[y0 * size + x0] || 0) * (1 - tx) * (1 - ty)
+    + (mask[y0 * size + x1] || 0) * tx * (1 - ty)
+    + (mask[y1 * size + x0] || 0) * (1 - tx) * ty
+    + (mask[y1 * size + x1] || 0) * tx * ty;
+};
+
+const segmentInsideMask = (mask, first, second) => {
+  const pixelLength = Math.hypot(second.px - first.px, second.py - first.py);
+  const samples = Math.max(1, Math.ceil(pixelLength / CONFIG.bondMaskSampleStep));
+  for (let sample = 0; sample <= samples; sample += 1) {
+    const amount = sample / samples;
+    if (maskAt(mask, first.px + (second.px - first.px) * amount, first.py + (second.py - first.py) * amount) < CONFIG.bondMaskThreshold) return false;
+  }
+  return true;
+};
+
+const trilaterateHereditaryPosition = (parents, radii) => {
+  const [a, b, c] = parents;
+  const [ra, rb, rc] = radii;
+  const m00 = 2 * (b.x - a.x), m01 = 2 * (b.y - a.y);
+  const m10 = 2 * (c.x - a.x), m11 = 2 * (c.y - a.y);
+  const rhs0 = ra * ra - rb * rb + b.x * b.x + b.y * b.y - a.x * a.x - a.y * a.y;
+  const rhs1 = ra * ra - rc * rc + c.x * c.x + c.y * c.y - a.x * a.x - a.y * a.y;
+  const determinant = m00 * m11 - m01 * m10;
+  if (Math.abs(determinant) < 1e-10) return null;
+  return { x: (rhs0 * m11 - m01 * rhs1) / determinant, y: (m00 * rhs1 - rhs0 * m10) / determinant };
+};
+
+const buildCandidatePool = (mask, stats, seed) => {
+  const rng = new Rng(seed ^ 0x91e10da5);
+  const points = [];
+  for (let y=stats.minY;y<=stats.maxY;y++) for(let x=stats.minX;x<=stats.maxX;x++) {
+    if(!mask[y*CONFIG.maskSize+x]) continue;
+    if(((x*17+y*31+seed)&1)&&points.length>1300) continue;
+    points.push({px:x+rng.signed()*.18,py:y+rng.signed()*.18,gx:x,gy:y,jx:rng.signed()*CONFIG.jitter,jy:rng.signed()*CONFIG.jitter});
+  }
+  if(points.length<=720)return points;
+  const centerX=(stats.minX+stats.maxX)*.5,centerY=(stats.minY+stats.maxY)*.5;
+  const central=[...points].sort((a,b)=>(a.gx-centerX)**2+(a.gy-centerY)**2-((b.gx-centerX)**2+(b.gy-centerY)**2)).slice(0,180);
+  const selected=new Set(central);
+  const distributed=points.map(point=>({point,order:Math.imul(point.gx+101,73856093)^Math.imul(point.gy+seed+211,19349663)})).sort((a,b)=>a.order-b.order);
+  for(const entry of distributed){selected.add(entry.point);if(selected.size>=720)break;}
+  return [...selected];
+};
+
+const buildApproxBlueprint = (rawMask, seed = 17, limit = CONFIG.blueprintCount) => {
+  const { mask, stats } = validateMask(rawMask);
+  const centerX = (stats.minX + stats.maxX) * 0.5;
+  const centerY = (stats.minY + stats.maxY) * 0.5;
+  const half = Math.max(stats.maxX - stats.minX + 1, stats.maxY - stats.minY + 1) * 0.5;
+  const normalizedArea = stats.area / Math.max(1, half * half);
+  const siteArea = CONFIG.latticeSpacing * CONFIG.latticeSpacing * Math.sqrt(3) * 0.5;
+  const baseScale = clamp(Math.sqrt((CONFIG.startCount * siteArea) / Math.max(0.2, normalizedArea)), 2.65, 5.1);
+  const pool = buildCandidatePool(mask, stats, seed);
+  const rng = new Rng(seed);
+  const normalized = (point) => ({ x: (point.px - centerX) / half, y: (point.py - centerY) / half });
+  const scaleAt = (count) => baseScale * Math.sqrt(Math.max(CONFIG.startCount, count) / CONFIG.startCount);
+  const physical = (site, count) => site.x === undefined
+    ? { x: site.nx * scaleAt(count) + site.jx, y: site.ny * scaleAt(count) + site.jy }
+    : { x: site.x, y: site.y };
+  const poolNorm = pool.map(normalized);
+  const central = pool.map((point, index) => ({ index, radial: poolNorm[index].x ** 2 + poolNorm[index].y ** 2 })).sort((a,b) => a.radial - b.radial).slice(0, 42);
+  let seedGroup = null;
+  for (let a = 0; a < central.length - 3 && !seedGroup; a += 1) for (let b = a + 1; b < central.length - 2 && !seedGroup; b += 1) {
+    for (let c = b + 1; c < central.length - 1 && !seedGroup; c += 1) for (let d = c + 1; d < central.length && !seedGroup; d += 1) {
+      const ids = [central[a].index, central[b].index, central[c].index, central[d].index];
+      const rawSites = ids.map((id) => ({ ...pool[id], nx: poolNorm[id].x, ny: poolNorm[id].y }));
+      const positions = rawSites.map((site) => physical(site, 4));
+      let valid = true;
+      for (let i = 0; i < 3 && valid; i += 1) for (let j = i + 1; j < 4; j += 1) {
+        const separation = Math.hypot(positions[i].x - positions[j].x, positions[i].y - positions[j].y);
+        if (separation < CONFIG.minLength || separation > CONFIG.maxLength || !segmentInsideMask(mask, rawSites[i], rawSites[j])) { valid = false; break; }
+      }
+      if (valid && Math.max(doubleArea(positions[0], positions[1], positions[2]), doubleArea(positions[0], positions[1], positions[3])) >= 0.08) seedGroup = ids;
+    }
+  }
+  if (!seedGroup) throw new Error("This drawing has no valid four-particle H‑II seed. Thicken its center.");
+
+  const used = new Set(seedGroup);
+  const sites = seedGroup.map((poolId, id) => ({ id, poolId, ...pool[poolId], nx: poolNorm[poolId].x, ny: poolNorm[poolId].y }));
+  for (const site of sites) {
+    const position = { x: site.nx * scaleAt(CONFIG.startCount) + site.jx, y: site.ny * scaleAt(CONFIG.startCount) + site.jy };
+    site.x = position.x; site.y = position.y;
+  }
+  const edges = new Set();
+  for (let a = 0; a < 3; a += 1) for (let b = a + 1; b < 4; b += 1) edges.add(edgeKey(a, b));
+  const steps = [];
+  const segmentCache = new Map();
+  const segmentValid = (poolId, siteId) => {
+    const key = `${poolId}:${siteId}`;
+    if (!segmentCache.has(key)) segmentCache.set(key, segmentInsideMask(mask, pool[poolId], sites[siteId]));
+    return segmentCache.get(key);
+  };
+
+  while (sites.length < limit) {
+    const nextCount = sites.length + 1;
+    const cellSize = CONFIG.maxLength;
+    const siteCells = new Map();
+    const physicalSites = sites.map((site) => physical(site, nextCount));
+    for (let siteId = 0; siteId < physicalSites.length; siteId += 1) {
+      const point = physicalSites[siteId];
+      const key = `${Math.floor(point.x / cellSize)}:${Math.floor(point.y / cellSize)}`;
+      if (!siteCells.has(key)) siteCells.set(key, []);
+      siteCells.get(key).push(siteId);
+    }
+    const localSites = (point) => {
+      const result = [];
+      const cellX = Math.floor(point.x / cellSize), cellY = Math.floor(point.y / cellSize);
+      for (let oy = -1; oy <= 1; oy += 1) for (let ox = -1; ox <= 1; ox += 1) {
+        for (const siteId of siteCells.get(`${cellX + ox}:${cellY + oy}`) || []) result.push(siteId);
+      }
+      return result;
+    };
+    const shortlist = [];
+    for (let poolId = 0; poolId < pool.length; poolId += 1) {
+      if (used.has(poolId)) continue;
+      const candidateNorm = poolNorm[poolId];
+      const candidateSite = { nx: candidateNorm.x, ny: candidateNorm.y, jx: pool[poolId].jx, jy: pool[poolId].jy };
+      const candidatePosition = physical(candidateSite, nextCount);
+      let minimum = Infinity;
+      const near = [];
+      for (const siteId of localSites(candidatePosition)) {
+        const sitePosition = physicalSites[siteId];
+        const now = Math.hypot(candidatePosition.x - sitePosition.x, candidatePosition.y - sitePosition.y);
+        minimum = Math.min(minimum, now);
+        if (now >= CONFIG.minLength && now <= CONFIG.maxLength) near.push({ id: siteId, now });
+      }
+      if (minimum < CONFIG.minLength * 1.03 || near.length < 3) continue;
+      const radial = candidateNorm.x ** 2 + candidateNorm.y ** 2;
+      const score = minimum + (sites.length < CONFIG.startCount ? radial * 0.52 : radial * 0.035);
+      shortlist.push({ poolId, score, near });
+    }
+    shortlist.sort((a,b) => b.score - a.score);
+    let chosen = null;
+    for (const option of shortlist.slice(0, 56)) {
+      const cn = poolNorm[option.poolId];
+      const candidateSite = { nx: cn.x, ny: cn.y, jx: pool[option.poolId].jx, jy: pool[option.poolId].jy };
+      const candidatePosition = physical(candidateSite, nextCount);
+      const near = option.near.sort((a,b) => a.now - b.now).slice(0, 16);
+      let bestParents = null;
+      for (let i = 0; i < near.length - 1; i += 1) for (let j = i + 1; j < near.length; j += 1) {
+        const first = near[i].id, second = near[j].id;
+        const splitKey = edgeKey(first, second);
+        if (!edges.has(splitKey)) continue;
+        for (let z = 0; z < near.length; z += 1) {
+          const third = near[z].id;
+          if (third === first || third === second) continue;
+          if (!segmentValid(option.poolId, first) || !segmentValid(option.poolId, second) || !segmentValid(option.poolId, third)) continue;
+          const pa = physicalSites[first], pb = physicalSites[second], pc = physicalSites[third];
+          const area = doubleArea(pa, pb, pc);
+          if (area < CONFIG.minimumParentArea) continue;
+          const target = physical(candidateSite, nextCount);
+          const radii = [pa,pb,pc].map((point) => Math.hypot(target.x - point.x, target.y - point.y));
+          const inherited = trilaterateHereditaryPosition([pa,pb,pc], radii);
+          if (!inherited || Math.hypot(inherited.x - target.x, inherited.y - target.y) > CONFIG.positionTolerance) continue;
+          const score = area - Math.max(...radii) * 0.04 + (near[i].now + near[j].now) * 0.025;
+          if (!bestParents || score > bestParents.score) bestParents = { parents: [first, second, third], split: [first, second], score };
+        }
+      }
+      if (bestParents) { chosen = { ...option, ...bestParents }; break; }
+    }
+    if (!chosen) throw new Error(`H‑II growth stalls at ${sites.length}/${limit} sites (${shortlist.length} geometric candidates). Use a thicker, smoother silhouette.`);
+    const cn = poolNorm[chosen.poolId];
+    const site = { id: sites.length, poolId: chosen.poolId, ...pool[chosen.poolId], nx: cn.x, ny: cn.y };
+    const bornPosition = { x: site.nx * scaleAt(nextCount) + site.jx, y: site.ny * scaleAt(nextCount) + site.jy };
+    site.x = bornPosition.x; site.y = bornPosition.y;
+    sites.push(site);
+    used.add(chosen.poolId);
+    edges.delete(edgeKey(chosen.split[0], chosen.split[1]));
+    for (const parent of chosen.parents) edges.add(edgeKey(site.id, parent));
+    steps.push({ site: site.id, proposer: chosen.parents[0], parents: chosen.parents, split: chosen.split });
+    if (edges.size !== 2 * sites.length - 2) throw new Error("H‑II edge invariant failed while compiling the drawing.");
+    for (const key of edges) {
+      const [a, b] = key.split(":").map(Number);
+      const first = physical(sites[a], sites.length), second = physical(sites[b], sites.length);
+      const length = Math.hypot(first.x - second.x, first.y - second.y);
+      if (length < CONFIG.minLength - 1e-7 || length > CONFIG.maxLength + 1e-7) {
+        throw new Error(`H‑II bond interval failed at ${sites.length}/${limit} sites (${key} = ${length.toFixed(3)}).`);
+      }
+    }
+  }
+  return { mask, stats, sites, steps, baseScale, centerX, centerY, half, seedSites: [0,1,2,3] };
+};
+
+const orderCoverageSites = (sites,mask) => {
+  const remaining=new Set(sites.map(site=>site.id)),coverageIds=[0],visibilityCache=new Map();remaining.delete(0);
+  const visible=(a,b)=>{const key=edgeKey(a,b);if(!visibilityCache.has(key))visibilityCache.set(key,segmentInsideMask(mask,sites[a],sites[b]));return visibilityCache.get(key);};
+  while(remaining.size){let target=-1,bestDistance=-1;for(const candidate of remaining){let nearest=Infinity;
+    for(const selected of coverageIds)nearest=Math.min(nearest,(sites[candidate].x-sites[selected].x)**2+(sites[candidate].y-sites[selected].y)**2);
+    if(nearest>bestDistance){bestDistance=nearest;target=candidate;}
+  }
+    const ranked=[...remaining].sort((a,b)=>(sites[a].x-sites[target].x)**2+(sites[a].y-sites[target].y)**2-((sites[b].x-sites[target].x)**2+(sites[b].y-sites[target].y)**2)||a-b);
+    const physicalScale=Math.sqrt(Math.max(CONFIG.startCount,coverageIds.length+1)/CONFIG.blueprintCount);
+    const compatible=(candidate,selected)=>{const distance=Math.hypot(sites[candidate].x-sites[selected].x,sites[candidate].y-sites[selected].y)*physicalScale;return distance>=CONFIG.minLength&&distance<=CONFIG.maxLength&&visible(candidate,selected);};
+    const required=coverageIds.length<2?1:2;let chosen=-1;
+    for(const candidate of ranked){let connections=0;for(const selected of coverageIds){if(compatible(candidate,selected)&&++connections>=required)break;}if(connections>=required){chosen=candidate;break;}}
+    if(chosen<0&&required>1)for(const candidate of ranked){if(coverageIds.some(selected=>compatible(candidate,selected))){chosen=candidate;break;}}
+    if(chosen<0)throw new Error("The mask cannot produce a connected multiresolution particle prefix.");
+    coverageIds.push(chosen);remaining.delete(chosen);
+  }
+  return coverageIds;
+};
+
+// Faithful browser-local port of origin/analyt's hereditary blueprint and
+// development pass. The approximate compiler above is retained only as
+// readable history; gameplay exclusively uses this lattice implementation.
+const buildBlueprint = (rawMask, seed = 17, limit = CONFIG.blueprintCount) => {
+  const { mask, stats } = validateMask(rawMask);
+  if (limit !== CONFIG.blueprintCount) throw new Error("Hereditary blueprints require the complete base DNA lattice.");
+  const phases = [0, .2, .4, .6, .8];
+  const latticeAt = (spacing, phaseX, phaseY) => {
+    const result = [], vertical = spacing * Math.sqrt(3) * .5;
+    let row = 0;
+    for (let y = phaseY * vertical; y < CONFIG.maskSize; y += vertical, row += 1) {
+      const offset = (row & 1) * spacing * .5;
+      for (let column = 0, x = phaseX * spacing + offset; x < CONFIG.maskSize; x += spacing, column += 1) {
+        const ix = clamp(Math.round(x),0,CONFIG.maskSize-1), iy = clamp(Math.round(y),0,CONFIG.maskSize-1);
+        if (!mask[iy * CONFIG.maskSize + ix]) continue;
+        result.push({ px:x, py:y, latticeLabel:[column,row], alpha:mask[iy*CONFIG.maskSize+ix] });
+      }
+    }
+    return result;
+  };
+  let best = null;
+  for (let step=0;step<=240;step++) {
+    const spacing=.8+step*.01;
+    for(const phaseY of phases) for(const phaseX of phases) {
+      const raw=latticeAt(spacing,phaseX,phaseY), difference=Math.abs(raw.length-CONFIG.blueprintCount);
+      if(!best||difference<best.difference)best={raw,spacing,difference};
+      if(!difference)break;
+    }
+    if(best?.difference===0)break;
+  }
+  if(!best||best.raw.length<CONFIG.blueprintCount)throw new Error("The drawing does not contain enough hereditary lattice sites.");
+  let raw=best.raw;
+  if(raw.length>CONFIG.blueprintCount){
+    const cx=raw.reduce((s,p)=>s+p.px/raw.length,0),cy=raw.reduce((s,p)=>s+p.py/raw.length,0);
+    raw=[...raw].sort((a,b)=>b.alpha-a.alpha||((b.px-cx)**2+(b.py-cy)**2)-((a.px-cx)**2+(a.py-cy)**2)||a.py-b.py||a.px-b.px).slice(0,CONFIG.blueprintCount);
+  }
+  const cx=raw.reduce((s,p)=>s+p.px/raw.length,0),cy=raw.reduce((s,p)=>s+p.py/raw.length,0);
+  const scale=CONFIG.latticeSpacing/best.spacing,rng=new Rng(seed);
+  const dna=raw.map(p=>({...p,x:(p.px-cx)*scale+rng.signed()*CONFIG.jitter,y:(p.py-cy)*scale+rng.signed()*CONFIG.jitter}));
+  dna.sort((a,b)=>a.x*a.x+a.y*a.y-(b.x*b.x+b.y*b.y)||Math.atan2(a.y,a.x)-Math.atan2(b.y,b.x));
+  dna.forEach((site,id)=>{site.id=id;site.neighbors=[];site.validNeighbors=[];});
+  const validBonds=new Set();
+  for(let a=0;a<dna.length-1;a++)for(let b=a+1;b<dna.length;b++){
+    const d=Math.hypot(dna[a].x-dna[b].x,dna[a].y-dna[b].y),key=edgeKey(a,b);
+    if(d>=CONFIG.minLength&&d<=CONFIG.maxLength&&segmentInsideMask(mask,dna[a],dna[b])){validBonds.add(key);dna[a].validNeighbors.push(b);dna[b].validNeighbors.push(a);}
+    if(d<=CONFIG.dnaNeighborRadius&&validBonds.has(key)){dna[a].neighbors.push(b);dna[b].neighbors.push(a);}
+  }
+  if(dna.some(site=>!site.neighbors.length))throw new Error("The hereditary drawing contains an isolated lattice site.");
+  let seedSites=null,seedScore=Infinity;const central=dna.slice(0,28);
+  for(let a=0;a<25;a++)for(let b=a+1;b<26;b++)for(let c=b+1;c<27;c++)for(let d=c+1;d<28;d++){
+    const group=[central[a],central[b],central[c],central[d]];let valid=true,maxArea=0;
+    for(let i=0;i<3;i++)for(let j=i+1;j<4;j++)if(!validBonds.has(edgeKey(group[i].id,group[j].id)))valid=false;
+    for(let i=0;i<2;i++)for(let j=i+1;j<3;j++)for(let k=j+1;k<4;k++)maxArea=Math.max(maxArea,doubleArea(group[i],group[j],group[k]));
+    if(!valid||maxArea<.08)continue;const score=group.reduce((s,p)=>s+p.x*p.x+p.y*p.y,0)-maxArea;
+    if(score<seedScore){seedScore=score;seedSites=group.map(p=>p.id);}
+  }
+  if(!seedSites)throw new Error("Could not find a valid hereditary K4 seed in this drawing.");
+  const occupied=new Set(seedSites),edges=new Set(),order=[...seedSites],births=[],birthRng=new Rng(seed+1000);
+  for(let a=0;a<3;a++)for(let b=a+1;b<4;b++)edges.add(edgeKey(seedSites[a],seedSites[b]));
+  const compare=(a,b)=>{for(let i=0;i<a.length;i++)if(a[i]!==b[i])return a[i]-b[i];return 0;};
+  while(order.length<CONFIG.blueprintCount){let birth=null;
+    for(let proposer=0;proposer<dna.length&&!birth;proposer++){
+      if(!occupied.has(proposer))continue;const candidates=[];
+      for(const child of dna[proposer].neighbors){if(occupied.has(child))continue;
+        const nearby=dna[child].validNeighbors.filter(id=>occupied.has(id));if(nearby.length<3||!nearby.includes(proposer))continue;const nearbySet=new Set(nearby);
+        for(const key of edges){const [u,w]=key.split(":").map(Number);if(!nearbySet.has(u)||!nearbySet.has(w))continue;
+          for(const z of nearby){if(z===u||z===w)continue;const parents=[u,w,z];if(!parents.includes(proposer))continue;const ps=parents.map(id=>dna[id]),area=doubleArea(ps[0],ps[1],ps[2]);if(area<CONFIG.minimumParentArea)continue;
+            const radii=ps.map(p=>Math.hypot(dna[child].x-p.x,dna[child].y-p.y)),inherited=trilaterateHereditaryPosition(ps,radii);
+            if(!inherited||Math.hypot(inherited.x-dna[child].x,inherited.y-dna[child].y)>CONFIG.positionTolerance)continue;
+            const occupiedNeighbors=dna[child].neighbors.reduce((n,id)=>n+Number(occupied.has(id)),0);
+            candidates.push({child,proposer,parents,split:[u,w],score:[occupiedNeighbors,area,-Math.max(...radii),-(dna[child].x*dna[child].x+dna[child].y*dna[child].y)]});
+          }
+        }
+      }
+      if(candidates.length){candidates.sort((a,b)=>compare(b.score,a.score));birth=candidates[birthRng.int(Math.min(6,candidates.length))];}
+    }
+    if(!birth)throw new Error(`H-II growth stalls at ${order.length}/${CONFIG.blueprintCount} sites. Use a thicker, smoother silhouette.`);
+    edges.delete(edgeKey(birth.split[0],birth.split[1]));for(const parent of birth.parents)edges.add(edgeKey(birth.child,parent));occupied.add(birth.child);order.push(birth.child);births.push(birth);
+  }
+  const remap=new Map(order.map((old,id)=>[old,id]));
+  const sites=order.map((old,id)=>({...dna[old],id,
+    neighbors:dna[old].neighbors.map(value=>remap.get(value)),
+    validNeighbors:dna[old].validNeighbors.map(value=>remap.get(value))}));
+  const steps=births.map(b=>({site:remap.get(b.child),proposer:remap.get(b.proposer),parents:b.parents.map(id=>remap.get(id)),split:b.split.map(id=>remap.get(id))}));
+  // Physical sampling is multiresolution: every prefix covers the full mask.
+  // H-II site identity and lineage remain in sites/steps and are never rebuilt.
+  const coverageIds=orderCoverageSites(sites,mask);
+  const coverage=coverageIds.map(id=>({x:sites[id].x,y:sites[id].y,px:sites[id].px,py:sites[id].py}));
+  return {mask,stats,sites,steps,coverage,seedSites:[0,1,2,3],exactHereditary:true,referenceCount:CONFIG.blueprintCount,maskCenterX:cx,maskCenterY:cy,maskScale:scale,extensionSeed:seed>>>0};
+};
+
+const applyMaterialMap = (blueprint, rawMaterials) => {
+  const materials=rawMaterials ? new Uint8Array(rawMaterials) : null;
+  blueprint.materialMap=materials;
+  for(const sample of blueprint.coverage){
+    const x=clamp(Math.round(sample.px),0,CONFIG.maskSize-1),y=clamp(Math.round(sample.py),0,CONFIG.maskSize-1);
+    sample.material=clamp(materials?.[y*CONFIG.maskSize+x]||0,0,5);
+  }
+  return blueprint;
+};
+
+const buildNpcDesign = (archetype) => {
+  const mask=new Uint8Array(CONFIG.maskSize*CONFIG.maskSize),materials=new Uint8Array(mask.length),paint=(x,y,material)=>{if(x<0||x>=CONFIG.maskSize||y<0||y>=CONFIG.maskSize)return;const index=y*CONFIG.maskSize+x;mask[index]=1;materials[index]=material;};
+  if(archetype==="walker"){
+    // Muscle A square; Foot A grips at both top corners while Foot B grips at
+    // both bottom corners on the opposite half-cycle.
+    for(let y=14;y<=57;y++)for(let x=14;x<=57;x++){let material=2;if(y<=24&&(x<=24||x>=47))material=4;else if(y>=47&&(x<=24||x>=47))material=5;paint(x,y,material);}
+  }else if(archetype==="swimmer"){
+    // Horizontal A/body/B sandwich. Opposed faces bend the long body while
+    // the anisotropic fluid axis favors travel along its length.
+    for(let y=22;y<=49;y++)for(let x=7;x<=64;x++)paint(x,y,y<=30?2:y>=41?3:0);
+  }else if(archetype==="worm"){
+    // A long capsule of phase-shifted wave muscle.
+    for(let y=27;y<=44;y++)for(let x=5;x<=66;x++){const inside=x>=14&&x<=57||((x-14)*(x-14)+(y-35.5)*(y-35.5)<=81)||((x-57)*(x-57)+(y-35.5)*(y-35.5)<=81);if(inside)paint(x,y,1);}
+  }else throw new Error(`Unknown NPC archetype: ${archetype}`);
+  return{mask,materials};
+};
+
+const blueprintPosition = (blueprint, siteId, count) => {
+  const site = blueprint.sites[siteId];
+  if (blueprint.exactHereditary) {
+    const target=blueprint.coverage[siteId],scale=Math.sqrt(Math.max(CONFIG.startCount,count)/(blueprint.referenceCount||CONFIG.blueprintCount));
+    return {x:target.x*scale,y:target.y*scale};
+  }
+  const scale = blueprint.baseScale * Math.sqrt(Math.max(CONFIG.startCount, count) / CONFIG.startCount);
+  return { x: site.nx * scale + site.jx, y: site.ny * scale + site.jy };
+};
+
+let rng = new Rng(1);
+let particles = new Map();
+let creatures = new Map();
+let bonds = [];
+let nextParticleId = 0;
+let nextCreatureId = 0;
+let playerId = 1;
+let playerMask = null;
+let playerMaterials = null;
+let npcBlueprints = [];
+let npcBlueprintsReady = false;
+let npcPlayerPreferenceEnabled = true;
+let input = { x: 0, y: 0, sequence: 0 };
+let localControllerId = "local";
+let humanPlayers = new Map();
+let inputByController = new Map();
+let paused = true;
+let phase = "idle";
+let tick = 0;
+let eaten = 0;
+let best = CONFIG.startCount;
+let tokens = 0;
+let lifetimeGained = 0;
+let respawns = [];
+let lastFrameAt = 0;
+let lastProgressTick = -Infinity;
+let lastProgressOccupied = -1;
+let loopHandle = null;
+const recycledParticles = [];
+const recycledBonds = [];
+
+const creatureCount = (creature) => creature ? creature.particleIds.size : 0;
+const player = () => creatures.get(playerId);
+const humanState = (controllerId) => humanPlayers.get(String(controllerId));
+const humanForCreature = (creature) => creature?.isHuman ? humanState(creature.controllerId) : null;
+const creaturePinned = (creature) => Boolean(creature?.menuFrozen);
+const particlePinned = (particle) => Boolean(particle?.footPlanted || creaturePinned(creatures.get(particle?.owner)));
+
+const creatureCenter = (creature) => {
+  if (!creature || !creature.particleIds.size) return { x: 0, y: 0 };
+  const first = particles.get(creature.particleIds.values().next().value);
+  if (!first) return { x: 0, y: 0 };
+  let sx = 0, sy = 0;
+  for (const id of creature.particleIds) {
+    const particle = particles.get(id);
+    if (!particle) continue;
+    sx += wrapDelta(particle.x - first.x);
+    sy += wrapDelta(particle.y - first.y);
+  }
+  return { x: wrap(first.x + sx / creature.particleIds.size), y: wrap(first.y + sy / creature.particleIds.size) };
+};
+
+const rotatePoint = (point, angle) => ({ x: point.x * Math.cos(angle) - point.y * Math.sin(angle), y: point.x * Math.sin(angle) + point.y * Math.cos(angle) });
+
+const makeParticle = (owner, x, y, bound = false, site = -1) => {
+  const id = nextParticleId++;
+  const material=bound ? (creatures.get(owner)?.blueprint.coverage?.[site]?.material||0) : 0;
+  particles.set(id, { id, owner, x: wrap(x), y: wrap(y), previousX: wrap(x), previousY: wrap(y), vx: 0, vy: 0, bound, site, displaySlot: bound ? site : -1, pendingSlot:-1, material, footPlanted:false, footAnchorX:0, footAnchorY:0, dragAxisX:0, dragAxisY:0, dragAxx:0, dragAxy:0, dragAyy:0, dragBxx:0, dragBxy:0, dragByx:0, dragByy:0 });
+  creatures.get(owner).particleIds.add(id);
+  return id;
+};
+
+const addBond = (owner, a, b, siteA, siteB) => bonds.push({ owner, a, b, siteA, siteB });
+
+const selectPhysicalEdgePairs = (samples,mask) => {
+  if(samples.length<2)return[];
+  const physicalScale=Math.sqrt(Math.max(CONFIG.startCount,samples.length)/CONFIG.blueprintCount);
+  const candidates=[],candidateByKey=new Map(),earlierCandidates=Array.from({length:samples.length},()=>[]),maximumBaseLength=CONFIG.maxLength/physicalScale,cells=new Map(),cellKey=(x,y)=>`${x}:${y}`;
+  for(let b=0;b<samples.length;b++){
+    const cellX=Math.floor(samples[b].x/maximumBaseLength),cellY=Math.floor(samples[b].y/maximumBaseLength);
+    for(let oy=-1;oy<=1;oy++)for(let ox=-1;ox<=1;ox++)for(const a of cells.get(cellKey(cellX+ox,cellY+oy))||[]){
+      const distance=(samples[a].x-samples[b].x)**2+(samples[a].y-samples[b].y)**2,physicalDistance=Math.sqrt(distance)*physicalScale;
+      if(physicalDistance<CONFIG.minLength||physicalDistance>CONFIG.maxLength||!segmentInsideMask(mask,samples[a],samples[b]))continue;
+      const edge={a,b,distance};candidates.push(edge);earlierCandidates[b].push(edge);candidateByKey.set(edgeKey(a,b),edge);
+    }
+    const key=cellKey(cellX,cellY);if(!cells.has(key))cells.set(key,[]);cells.get(key).push(b);
+  }
+  candidates.sort((a,b)=>a.distance-b.distance||a.a-b.a||a.b-b.b);
+  const roots=Array.from({length:samples.length},(_,index)=>index),find=value=>{while(roots[value]!==value){roots[value]=roots[roots[value]];value=roots[value];}return value;},join=(a,b)=>{const first=find(a),second=find(b);if(first===second)return false;roots[first]=second;return true;},selected=[],keys=new Set(),adjacency=Array.from({length:samples.length},()=>new Set());
+  const select=edge=>{const key=edgeKey(edge.a,edge.b);if(keys.has(key))return false;keys.add(key);selected.push(edge);adjacency[edge.a].add(edge.b);adjacency[edge.b].add(edge.a);return true;};
+  // The coverage order is a connected multiresolution build order. Give each
+  // new sample two earlier, non-collinear supports when the mask permits it;
+  // this prevents narrow single-bond appendages from behaving like filaments.
+  for(let index=1;index<samples.length;index++){
+    const earlier=earlierCandidates[index].sort((a,b)=>a.distance-b.distance||a.a-b.a).slice(0,16);
+    if(!earlier.length)continue;
+    if(index===1||earlier.length===1){select(earlier[0]);continue;}
+    let best=null;
+    for(let first=0;first<earlier.length-1;first++)for(let second=first+1;second<earlier.length;second++){
+      const a=earlier[first],b=earlier[second],otherA=a.a,otherB=b.a;
+      const spread=doubleArea(samples[index],samples[otherA],samples[otherB])/Math.max(1e-7,Math.sqrt(a.distance*b.distance));
+      const score=spread-Math.sqrt(a.distance+b.distance)*1e-4;
+      if(!best||score>best.score)best={a,b,score};
+    }
+    select(best.a);select(best.b);
+  }
+  // Complete connectivity defensively. Normally the scaffold above already
+  // connects every prefix, but this also handles exceptionally tight masks.
+  for(const edge of selected)join(edge.a,edge.b);
+  for(const edge of candidates)if(join(edge.a,edge.b))select(edge);
+  const root=find(0);if(samples.some((_,index)=>find(index)!==root))throw new Error("The physical mask samples could not form a connected graph.");
+  const target=Math.min(candidates.length,Math.max(samples.length-1,3*samples.length-6));
+  for(let round=0;round<3&&selected.length<target;round++){
+    const braces=new Map();for(let center=0;center<adjacency.length;center++){const neighbors=[...adjacency[center]];for(let first=0;first<neighbors.length-1;first++)for(let second=first+1;second<neighbors.length;second++){
+      const a=neighbors[first],b=neighbors[second],key=edgeKey(a,b),edge=candidateByKey.get(key);if(!edge||keys.has(key))continue;
+      const area=doubleArea(samples[a],samples[center],samples[b]);if(area<CONFIG.minimumParentArea)continue;
+      const sideA=candidateByKey.get(edgeKey(a,center))?.distance||0,sideB=candidateByKey.get(edgeKey(b,center))?.distance||0,quality=area/Math.max(1e-7,edge.distance+sideA+sideB);
+      const previous=braces.get(key);if(!previous||quality>previous.quality)braces.set(key,{...edge,quality});
+    }}
+    const ranked=[...braces.values()].sort((a,b)=>b.quality-a.quality||a.distance-b.distance||a.a-b.a||a.b-b.b);if(!ranked.length)break;
+    for(const edge of ranked){if(selected.length>=target)break;select(edge);}
+  }
+  for(const edge of candidates){if(selected.length>=target)break;select(edge);}
+  return selected.map(edge=>[edge.a,edge.b]);
+};
+
+const sampleMaterial = (blueprint,sample) => {
+  if(blueprint.materialMap){
+    const x=clamp(Math.round(sample.px),0,CONFIG.maskSize-1),y=clamp(Math.round(sample.py),0,CONFIG.maskSize-1);
+    return clamp(blueprint.materialMap[y*CONFIG.maskSize+x]||0,0,5);
+  }
+  return 0;
+};
+
+const extensionLineageState = (blueprint) => {
+  if(blueprint.extensionState)return blueprint.extensionState;
+  const edges=new Set();for(let a=0;a<3;a++)for(let b=a+1;b<4;b++)edges.add(edgeKey(a,b));
+  for(const step of blueprint.steps){edges.delete(edgeKey(step.split[0],step.split[1]));for(const parent of step.parents)edges.add(edgeKey(step.site,parent));}
+  blueprint.extensionState={edges};return blueprint.extensionState;
+};
+
+const chooseExtensionParents = (blueprint,state,sample,localNeighbors) => {
+  const neighborSet=new Set(localNeighbors);let best=null;
+  for(const key of state.edges){const [a,b]=key.split(":").map(Number);if(!neighborSet.has(a)||!neighborSet.has(b))continue;
+    for(const third of localNeighbors){if(third===a||third===b)continue;
+      const area=doubleArea(blueprint.sites[a],blueprint.sites[b],blueprint.sites[third]);if(area<CONFIG.minimumParentArea)continue;
+      const distance=(blueprint.sites[a].x-sample.x)**2+(blueprint.sites[a].y-sample.y)**2+(blueprint.sites[b].x-sample.x)**2+(blueprint.sites[b].y-sample.y)**2+(blueprint.sites[third].x-sample.x)**2+(blueprint.sites[third].y-sample.y)**2;
+      const score=area-distance*.001;if(!best||score>best.score)best={parents:[a,b,third],split:[a,b],score};
+    }
+  }
+  return best;
+};
+
+const ensureBlueprintCapacity = (blueprint,requestedCount) => {
+  const target=Math.max(CONFIG.startCount,Math.floor(requestedCount));if(blueprint.coverage.length>=target)return blueprint;
+  const state=extensionLineageState(blueprint),reference=blueprint.referenceCount||CONFIG.blueprintCount,spanX=Math.max(1,blueprint.stats.maxX-blueprint.stats.minX),spanY=Math.max(1,blueprint.stats.maxY-blueprint.stats.minY);
+  while(blueprint.coverage.length<target){
+    const nextCount=blueprint.coverage.length+1,scale=Math.sqrt(nextCount/reference),candidateRng=new Rng((blueprint.extensionSeed||1)^Math.imul(nextCount+17,0x9e3779b1)),displayCandidates=[];
+    for(let attempt=0;attempt<320;attempt++){
+      const px=blueprint.stats.minX+candidateRng.next()*spanX,py=blueprint.stats.minY+candidateRng.next()*spanY;if(maskAt(blueprint.mask,px,py)<.5)continue;
+      const sample={px,py,x:(px-blueprint.maskCenterX)*blueprint.maskScale,y:(py-blueprint.maskCenterY)*blueprint.maskScale};let nearest=Infinity;const local=[];
+      for(let id=0;id<blueprint.coverage.length;id++){
+        const other=blueprint.coverage[id],distance=Math.hypot(sample.x-other.x,sample.y-other.y)*scale;nearest=Math.min(nearest,distance);
+        if(distance>=CONFIG.minLength&&distance<=CONFIG.maxLength)local.push({id,distance});
+      }
+      if(nearest<CONFIG.minLength*.9||local.length<2)continue;
+      displayCandidates.push({sample,local:local.sort((a,b)=>a.distance-b.distance).slice(0,24),score:nearest+candidateRng.next()*1e-7});
+    }
+    displayCandidates.sort((a,b)=>b.score-a.score);let best=null;
+    for(const candidate of displayCandidates){let connections=0;for(const neighbor of candidate.local)if(segmentInsideMask(blueprint.mask,candidate.sample,blueprint.coverage[neighbor.id])&&++connections>=2)break;if(connections>=2){best=candidate;break;}}
+    if(!best)throw new Error(`The hereditary mask could not place particle ${nextCount}. Widen its narrowest sections.`);
+    let lineage=null;
+    for(let attempt=0;attempt<640&&!lineage;attempt++){
+      const px=blueprint.stats.minX+candidateRng.next()*spanX,py=blueprint.stats.minY+candidateRng.next()*spanY;if(maskAt(blueprint.mask,px,py)<.5)continue;
+      const targetSite={px,py,x:(px-blueprint.maskCenterX)*blueprint.maskScale,y:(py-blueprint.maskCenterY)*blueprint.maskScale},local=[];
+      for(let id=0;id<blueprint.sites.length;id++){const other=blueprint.sites[id],distance=Math.hypot(targetSite.x-other.x,targetSite.y-other.y);if(distance>=CONFIG.minLength&&distance<=CONFIG.maxLength&&segmentInsideMask(blueprint.mask,targetSite,other))local.push({id,distance});}
+      if(local.length<3)continue;local.sort((a,b)=>a.distance-b.distance);const birth=chooseExtensionParents(blueprint,state,targetSite,local.slice(0,28).map(entry=>entry.id));if(birth)lineage={targetSite,birth};
+    }
+    if(!lineage)throw new Error(`The hereditary registry could not place particle ${nextCount}. Widen its narrowest sections.`);
+    const birth=lineage.birth,siteId=blueprint.sites.length;
+    const sample={...best.sample,material:sampleMaterial(blueprint,best.sample)},site={...lineage.targetSite,id:siteId,neighbors:[...birth.parents],validNeighbors:[...birth.parents]};
+    for(const parent of birth.parents){const parentSite=blueprint.sites[parent];if(!parentSite.neighbors.includes(siteId))parentSite.neighbors.push(siteId);if(!parentSite.validNeighbors.includes(siteId))parentSite.validNeighbors.push(siteId);}
+    state.edges.delete(edgeKey(birth.split[0],birth.split[1]));for(const parent of birth.parents)state.edges.add(edgeKey(siteId,parent));
+    blueprint.sites.push(site);blueprint.coverage.push(sample);blueprint.steps.push({site:siteId,proposer:birth.parents[0],parents:birth.parents,split:birth.split});
+    if(state.edges.size!==2*blueprint.sites.length-2)throw new Error("The unlimited H-II lineage edge count diverged.");
+  }
+  return blueprint;
+};
+
+const rebuildPhysicalBonds = (creature) => {
+  const body=[];for(const id of creature.particleIds){const particle=particles.get(id);if(particle?.bound&&particle.displaySlot>=0)body.push(particle);}
+  bonds=bonds.filter(bond=>bond.owner!==creature.id);if(body.length<2)return;
+  const samples=body.map(particle=>creature.blueprint.coverage[particle.displaySlot]),selected=selectPhysicalEdgePairs(samples,creature.blueprint.mask);
+  for(const [a,b] of selected)addBond(creature.id,body[a].id,body[b].id,body[a].site,body[b].site);
+};
+
+const seedCreatureGraph = (creature, center, particleCount, animate, stagedRedraw = false) => {
+  ensureBlueprintCapacity(creature.blueprint,particleCount);
+  creature.particleIds.clear();
+  creature.birthOptions = null;
+  creature.occupied = animate ? 4 : particleCount;
+  creature.nextStep = creature.occupied - 4;
+  const siteToParticle = new Map();
+  for (let site = 0; site < creature.occupied; site += 1) {
+    const local = rotatePoint(blueprintPosition(creature.blueprint, site, creature.occupied), creature.rotation);
+    const id = makeParticle(creature.id, center.x + local.x, center.y + local.y, true, site);
+    siteToParticle.set(site, id);
+  }
+  const graphEdges = new Set();
+  for (let a = 0; a < 3; a += 1) for (let b = a + 1; b < 4; b += 1) graphEdges.add(edgeKey(a,b));
+  for (let index = 0; index < creature.nextStep; index += 1) {
+    const step = creature.blueprint.steps[index];
+    graphEdges.delete(edgeKey(step.split[0], step.split[1]));
+    for (const parent of step.parents) graphEdges.add(edgeKey(step.site, parent));
+  }
+  creature.lineageEdges=graphEdges;
+  for (let index = creature.occupied; index < particleCount; index += 1) {
+    const angle = rng.range(0, Math.PI * 2), radius = rng.range(1.5, 5.4),target=stagedRedraw?rotatePoint(blueprintPosition(creature.blueprint,index,particleCount),creature.rotation):null;
+    const id = makeParticle(creature.id, center.x + (target?.x??Math.cos(angle)*radius), center.y + (target?.y??Math.sin(angle)*radius), false, -1);
+    const p = particles.get(id);
+    p.pendingSlot=stagedRedraw?index:-1;
+    p.vx = rng.signed() * 0.5; p.vy = rng.signed() * 0.5;
+  }
+  creature.lastBirthTick = tick;
+  rebuildPhysicalBonds(creature);
+};
+
+const removeCreatureMatter = (creature) => {
+  for (const id of creature.particleIds) particles.delete(id);
+  bonds = bonds.filter((bond) => bond.owner !== creature.id);
+  creature.particleIds.clear();
+};
+
+const createCreature = ({ blueprint, count, center, isPlayer = false, controllerId = "", label = "", color = "#79f2bd", forwardOffset = 0, animate = false }) => {
+  const normalizedController=String(controllerId|| (isPlayer?localControllerId:"")),isHuman=Boolean(normalizedController),id=++nextCreatureId;
+  const localHuman=isHuman&&normalizedController===localControllerId;if(localHuman)playerId=id;
+  const creature = { id, blueprint, particleIds: new Set(), lineageEdges:new Set(), occupied: 0, nextStep: 0, birthOptions: null, isPlayer:localHuman, isHuman, controllerId:normalizedController, menuFrozen:false, regrowing:false, regrowTarget:0, label, color, forwardOffset, travelX:0, travelY:0, rotation: isHuman ? 0 : rng.range(-Math.PI, Math.PI), aiAngle: rng.range(0, Math.PI * 2), aiTimer: rng.range(0.4, 1.8), aiTargetKind:"", aiTargetId:-1, aiTargetUntil:0, shieldUntil: 0, alive: true };
+  creatures.set(id, creature);
+  seedCreatureGraph(creature, center, count, animate);
+  return creature;
+};
+
+const chooseNpcCount = (maximum) => sampleNpcSize(rng.next(),maximum);
+
+const ecosystemMatter = () => {let count=0;for(const particle of particles.values()){const owner=creatures.get(particle.owner);if(particle.owner===0||!owner?.isHuman)count+=1;}return count;};
+
+const spawnNpc = () => {
+  const ecosystem=ecosystemMatter(),available=CONFIG.worldBudget-ecosystem;
+  if (!npcBlueprintsReady || !npcBlueprints.length || available<CONFIG.npcMinimumSize) return false;
+  const maximum=Math.min(CONFIG.npcMaximumSpawnSize,available);if(maximum<CONFIG.npcMinimumSize)return false;
+  const count=chooseNpcCount(maximum);
+  const pcenter = creatureCenter(player()||[...creatures.values()].find(creature=>creature.isHuman));
+  let center;
+  for (let attempt = 0; attempt < 30; attempt += 1) {
+    center = { x: rng.range(0, CONFIG.worldSize), y: rng.range(0, CONFIG.worldSize) };
+    if (Math.hypot(wrapDelta(center.x - pcenter.x), wrapDelta(center.y - pcenter.y)) > 28) break;
+  }
+  const entry = npcBlueprints[rng.int(npcBlueprints.length)];
+  createCreature({ blueprint: entry.blueprint, count, center, label: entry.label, color: entry.color, forwardOffset: entry.forwardOffset });
+  return true;
+};
+
+const fillNpcs = () => {
+  while (spawnNpc()) {}
+};
+
+const resetSession = (entries, seed, animate = false) => {
+  rng = new Rng(seed);
+  particles = new Map(); creatures = new Map(); bonds = [];
+  nextParticleId = 0; nextCreatureId = 0; playerId = 1; tick = 0; eaten = 0; tokens = 0; lifetimeGained = 0; respawns = [];humanPlayers=new Map();inputByController=new Map();
+  lastProgressTick = -Infinity; lastProgressOccupied = -1;
+  const spawns=[{x:96,y:96},{x:72,y:96},{x:120,y:96},{x:96,y:72}];let localCreature=null;
+  entries.slice(0,4).forEach((entry,index)=>{
+    const controllerId=String(entry.controllerId||`player-${index+1}`),state={controllerId,creatureId:0,blueprint:entry.blueprint,mask:entry.mask||null,materials:entry.materials||null,label:entry.label||`Player ${index+1}`,color:entry.color||["#65d9ff","#ff9b73","#c59cff","#ffe36e"][index],eaten:0,best:CONFIG.startCount,tokens:0,lifetimeGained:0,spentTokens:0,alive:true,conquered:false};
+    humanPlayers.set(controllerId,state);inputByController.set(controllerId,{x:0,y:0,sequence:0});
+    const creature=createCreature({blueprint:entry.blueprint,count:CONFIG.startCount,center:spawns[index],controllerId,label:state.label,color:state.color,animate:animate&&controllerId===localControllerId});state.creatureId=creature.id;creature.shieldUntil=tick+120;if(controllerId===localControllerId)localCreature=creature;
+  });
+  phase = animate ? "assembling" : "playing";
+  paused = false;
+  self.postMessage({ type: "READY", phase, total: CONFIG.startCount, humans:[...humanPlayers.values()].map(state=>({controllerId:state.controllerId,creatureId:state.creatureId,label:state.label,color:state.color})) });
+  if (!animate) fillNpcs();
+  return localCreature;
+};
+
+const resetWorld = (blueprint, seed, animate = true) => resetSession([{controllerId:localControllerId,blueprint,label:"Player",color:"#65d9ff",mask:playerMask,materials:playerMaterials}],seed,animate);
+
+const safeHumanSpawn = () => {
+  let center={x:rng.range(18,CONFIG.worldSize-18),y:rng.range(18,CONFIG.worldSize-18)};
+  for(let attempt=0;attempt<40;attempt++){
+    const candidate={x:rng.range(10,CONFIG.worldSize-10),y:rng.range(10,CONFIG.worldSize-10)};let clear=true;
+    for(const creature of creatures.values()){const other=creatureCenter(creature);if(Math.hypot(wrapDelta(candidate.x-other.x),wrapDelta(candidate.y-other.y))<20){clear=false;break;}}
+    center=candidate;if(clear)break;
+  }
+  return center;
+};
+
+const setHumanMenuState = (controllerId, frozen) => {
+  const state=humanState(controllerId),creature=creatures.get(state?.creatureId);if(!state||!creature?.alive)return false;
+  creature.menuFrozen=Boolean(frozen);for(const id of creature.particleIds){const particle=particles.get(id);if(!particle)continue;particle.previousX=particle.x;particle.previousY=particle.y;particle.vx=0;particle.vy=0;particle.footPlanted=false;}
+  return true;
+};
+
+const redrawHuman = (controllerId, blueprint, mask = null, materials = null) => {
+  const state=humanState(controllerId),creature=creatures.get(state?.creatureId);if(!state||!creature?.alive)throw new Error("This player has no living creature to redraw.");
+  if(state.tokens<1)throw new Error("No redraw token is available.");
+  const center=creatureCenter(creature),count=creatureCount(creature);removeCreatureMatter(creature);creature.blueprint=blueprint;creature.rotation=0;creature.menuFrozen=false;creature.regrowing=true;creature.regrowTarget=count;state.blueprint=blueprint;state.mask=mask||state.mask;state.materials=materials||state.materials;state.spentTokens+=1;state.tokens-=1;
+  seedCreatureGraph(creature,center,count,true,true);creature.shieldUntil=Infinity;if(controllerId===localControllerId){tokens=state.tokens;playerMask=state.mask||playerMask;playerMaterials=state.materials||playerMaterials;}
+  self.postMessage({type:"REGROW_PROGRESS",controllerId,occupied:creature.occupied,total:count,redraw:true});return creature;
+};
+
+const respawnHuman = (controllerId, blueprint = null, mask = null, materials = null) => {
+  const state=humanState(controllerId);if(!state)throw new Error("Unknown player.");if(state.alive&&creatures.has(state.creatureId))return creatures.get(state.creatureId);
+  if(blueprint){state.blueprint=blueprint;state.mask=mask||state.mask;state.materials=materials||state.materials;}
+  const creature=createCreature({blueprint:state.blueprint,count:CONFIG.startCount,center:safeHumanSpawn(),controllerId,label:state.label,color:state.color});creature.shieldUntil=tick+120;state.creatureId=creature.id;state.alive=true;state.eaten=0;state.tokens=0;state.lifetimeGained=0;state.spentTokens=0;state.conquered=false;
+  self.postMessage({type:"PLAYER_EVENT",controllerId,kind:"STARTED",respawn:true});return creature;
+};
+
+const removeHuman = (controllerId) => {
+  const state=humanState(controllerId),creature=creatures.get(state?.creatureId);if(creature){const ids=[...creature.particleIds],released=deathFoodCount(ids.length);bonds=bonds.filter(bond=>bond.owner!==creature.id);for(let index=0;index<ids.length;index++){const particle=particles.get(ids[index]);if(!particle)continue;if(index>=released){particles.delete(particle.id);continue;}particle.owner=0;particle.bound=false;particle.site=-1;particle.displaySlot=-1;particle.material=0;particle.footPlanted=false;particle.vx+=rng.signed();particle.vy+=rng.signed();}creatures.delete(creature.id);}
+  humanPlayers.delete(String(controllerId));inputByController.delete(String(controllerId));self.postMessage({type:"PLAYER_EVENT",controllerId:String(controllerId),kind:"PLAYER_REMOVED"});
+};
+
+const shouldGuideAssembly = (currentPhase, currentTick, lastBirthTick) =>
+  (currentPhase === "assembling" || currentPhase === "regrowing") && currentTick - lastBirthTick >= 120;
+
+const bondRest = (bond) => {
+  const creature = creatures.get(bond.owner);
+  if (!creature) return CONFIG.latticeSpacing;
+  const firstParticle=particles.get(bond.a),secondParticle=particles.get(bond.b);
+  let base;
+  if(creature.blueprint.exactHereditary){
+    const a=creature.blueprint.coverage[firstParticle?.displaySlot??bond.siteA],b=creature.blueprint.coverage[secondParticle?.displaySlot??bond.siteB];
+    const scale=Math.sqrt(Math.max(CONFIG.startCount,creature.occupied)/(creature.blueprint.referenceCount||CONFIG.blueprintCount));
+    base=Math.hypot(a.x-b.x,a.y-b.y)*scale;
+  }else{
+    const a = blueprintPosition(creature.blueprint, bond.siteA, creature.occupied);
+    const b = blueprintPosition(creature.blueprint, bond.siteB, creature.occupied);
+    base=Math.hypot(a.x - b.x, a.y - b.y);
+  }
+  const muscleSignals=[];
+  for(const particle of [firstParticle,secondParticle])if(!creature.menuFrozen&&isMuscleMaterial(particle?.material||0)){
+    const sample=creature.blueprint.coverage?.[particle.displaySlot];
+    const phase=musclePhase(particle.material,sample?.x||0,sample?.y||0,creature.id);
+    muscleSignals.push(Math.sin(tick*CONFIG.dt*Math.PI*2*CONFIG.muscleFrequency+phase));
+  }
+  const muscleFactor=muscleSignals.length?1+CONFIG.muscleAmplitude*muscleSignals.reduce((sum,value)=>sum+value,0)/muscleSignals.length:1;
+  return base*muscleFactor;
+};
+
+const updateCreatureIntent = (creature) => {
+  if (creature.isHuman) return;
+  const center=creatureCenter(creature),ownSize=creatureCount(creature);
+  let currentCreatureTarget=null,bestThreat=null,bestPrey=null;
+  for(const candidate of creatures.values()){
+    if(candidate.id===creature.id||!candidate.alive)continue;
+    const other=creatureCenter(candidate),dx=wrapDelta(other.x-center.x),dy=wrapDelta(other.y-center.y),distance=Math.hypot(dx,dy);
+    if(distance<1e-6||distance>=CONFIG.npcAggroRadius)continue;
+    const otherSize=creatureCount(candidate),weight=npcGoalWeight(ownSize,otherSize,distance),target={id:candidate.id,dx,dy,distance,weight,score:npcTargetScore(ownSize,otherSize,distance,candidate.isHuman,npcPlayerPreferenceEnabled),threat:otherSize>=ownSize};
+    if(creature.aiTargetKind==="creature"&&creature.aiTargetId===candidate.id)currentCreatureTarget=target;
+    if(target.threat){if(!bestThreat||target.score>bestThreat.score)bestThreat=target;}
+    else if(!bestPrey||target.score>bestPrey.score)bestPrey=target;
+  }
+  const bestCreatureTarget=bestThreat||bestPrey;
+  let chosenCreatureTarget=currentCreatureTarget;
+  if(bestCreatureTarget&&(!chosenCreatureTarget||shouldSwitchNpcTarget(chosenCreatureTarget.score,chosenCreatureTarget.threat,bestCreatureTarget.score,bestCreatureTarget.threat,creature.aiTargetUntil,tick)))chosenCreatureTarget=bestCreatureTarget;
+  if(chosenCreatureTarget){
+    if(creature.aiTargetKind!=="creature"||creature.aiTargetId!==chosenCreatureTarget.id||tick>=creature.aiTargetUntil)creature.aiTargetUntil=tick+CONFIG.npcTargetLockTicks;
+    creature.aiTargetKind="creature";creature.aiTargetId=chosenCreatureTarget.id;
+    creature.aiAngle=Math.atan2(chosenCreatureTarget.dy*chosenCreatureTarget.weight,chosenCreatureTarget.dx*chosenCreatureTarget.weight);
+    return;
+  }
+  let currentFoodTarget=null,bestFoodTarget=null;
+  for(const particle of particles.values()){
+    if(particle.owner!==0)continue;const dx=wrapDelta(particle.x-center.x),dy=wrapDelta(particle.y-center.y),distance=Math.hypot(dx,dy);
+    if(distance<1e-6||distance>=CONFIG.npcFoodRadius)continue;
+    const target={id:particle.id,dx,dy,distance,score:CONFIG.npcFoodAttraction*(1-distance/CONFIG.npcFoodRadius)};
+    if(creature.aiTargetKind==="food"&&creature.aiTargetId===particle.id)currentFoodTarget=target;
+    if(!bestFoodTarget||target.score>bestFoodTarget.score)bestFoodTarget=target;
+  }
+  let chosenFoodTarget=currentFoodTarget;
+  if(bestFoodTarget&&(!chosenFoodTarget||tick>=creature.aiTargetUntil||bestFoodTarget.score>chosenFoodTarget.score*CONFIG.npcTargetSwitchRatio))chosenFoodTarget=bestFoodTarget;
+  if(chosenFoodTarget){
+    if(creature.aiTargetKind!=="food"||creature.aiTargetId!==chosenFoodTarget.id||tick>=creature.aiTargetUntil)creature.aiTargetUntil=tick+CONFIG.npcFoodTargetLockTicks;
+    creature.aiTargetKind="food";creature.aiTargetId=chosenFoodTarget.id;
+    creature.aiAngle=Math.atan2(chosenFoodTarget.dy,chosenFoodTarget.dx);
+    return;
+  }
+  creature.aiTargetKind="";creature.aiTargetId=-1;creature.aiTargetUntil=0;
+  creature.aiTimer -= CONFIG.dt;
+  if (creature.aiTimer <= 0) {
+    creature.aiAngle += rng.signed() * 1.35;
+    creature.aiTimer = rng.range(0.55, 1.8);
+  }
+};
+
+const updateCreatureTravelEstimate = (creature) => {
+  if(creature.isHuman)return;let vx=0,vy=0,count=0;
+  for(const id of creature.particleIds){const particle=particles.get(id);if(!particle?.bound)continue;vx+=particle.vx;vy+=particle.vy;count+=1;}
+  if(!count)return;vx/=count;vy/=count;const blend=CONFIG.npcTravelBlend;creature.travelX+=((vx)-creature.travelX)*blend;creature.travelY+=((vy)-creature.travelY)*blend;
+};
+
+const creatureFacingAngle = (creature) => {
+  const body=[];
+  for(const id of creature.particleIds){const particle=particles.get(id);if(particle?.bound&&particle.displaySlot>=0)body.push(particle);}
+  if(body.length<2)return 0;
+  const anchor=body[0],samples=[];let cx=0,cy=0,tx=0,ty=0;
+  for(const particle of body){const target=creature.blueprint.coverage[particle.displaySlot],sample={particle,x:anchor.x+wrapDelta(particle.x-anchor.x),y:anchor.y+wrapDelta(particle.y-anchor.y),tx:target.x,ty:target.y};samples.push(sample);cx+=sample.x;cy+=sample.y;tx+=sample.tx;ty+=sample.ty;}
+  cx/=samples.length;cy/=samples.length;tx/=samples.length;ty/=samples.length;let cosine=0,sine=0;
+  for(const sample of samples){const lx=sample.tx-tx,ly=sample.ty-ty,wx=sample.x-cx,wy=sample.y-cy;cosine+=lx*wx+ly*wy;sine+=lx*wy-ly*wx;}
+  return Math.atan2(sine,cosine);
+};
+
+const accumulateLocalDragDeformation = (particle,aXX,aXY,aYY,bXX,bXY,bYX,bYY) => {
+  particle.dragAxx+=aXX;particle.dragAxy+=aXY;particle.dragAyy+=aYY;
+  particle.dragBxx+=bXX;particle.dragBxy+=bXY;particle.dragByx+=bYX;particle.dragByy+=bYY;
+};
+
+const applyAnisotropicFluidDrag = () => {
+  const referenceAngle=-Math.PI/2+CONFIG.fluidDragAxisOffset,referenceX=Math.cos(referenceAngle),referenceY=Math.sin(referenceAngle);
+  for(const creature of creatures.values()){
+    if(!creature.alive||creature.menuFrozen)continue;const fallbackAngle=creatureFacingAngle(creature)+referenceAngle;creature.dragFallbackX=Math.cos(fallbackAngle);creature.dragFallbackY=Math.sin(fallbackAngle);
+    for(const id of creature.particleIds){const particle=particles.get(id);if(!particle?.bound)continue;particle.dragAxx=0;particle.dragAxy=0;particle.dragAyy=0;particle.dragBxx=0;particle.dragBxy=0;particle.dragByx=0;particle.dragByy=0;}
+  }
+  for(const bond of bonds){
+    const creature=creatures.get(bond.owner),first=particles.get(bond.a),second=particles.get(bond.b);if(!creature?.alive||creature.menuFrozen||!first?.bound||!second?.bound)continue;
+    const firstReference=creature.blueprint.coverage[first.displaySlot],secondReference=creature.blueprint.coverage[second.displaySlot];if(!firstReference||!secondReference)continue;
+    const referenceDx=secondReference.x-firstReference.x,referenceDy=secondReference.y-firstReference.y,currentDx=wrapDelta(second.x-first.x),currentDy=wrapDelta(second.y-first.y);
+    const aXX=referenceDx*referenceDx,aXY=referenceDx*referenceDy,aYY=referenceDy*referenceDy,bXX=currentDx*referenceDx,bXY=currentDx*referenceDy,bYX=currentDy*referenceDx,bYY=currentDy*referenceDy;
+    accumulateLocalDragDeformation(first,aXX,aXY,aYY,bXX,bXY,bYX,bYY);accumulateLocalDragDeformation(second,aXX,aXY,aYY,bXX,bXY,bYX,bYY);
+  }
+  for(const creature of creatures.values()){
+    if(!creature.alive||creature.menuFrozen)continue;
+    for(const id of creature.particleIds){const particle=particles.get(id);if(!particle?.bound||particle.footPlanted)continue;
+      let axis=localDragAxisFromDeformation(particle,referenceX,referenceY,creature.dragFallbackX,creature.dragFallbackY),axisX=axis.x,axisY=axis.y;
+      const previousLength=Math.hypot(particle.dragAxisX,particle.dragAxisY);if(previousLength>.5){let previousX=particle.dragAxisX/previousLength,previousY=particle.dragAxisY/previousLength;if(axisX*previousX+axisY*previousY<0){axisX=-axisX;axisY=-axisY;}const blend=CONFIG.localDragAxisBlend;axisX=previousX*(1-blend)+axisX*blend;axisY=previousY*(1-blend)+axisY*blend;const mixedLength=Math.hypot(axisX,axisY)||1;axisX/=mixedLength;axisY/=mixedLength;}
+      particle.dragAxisX=axisX;particle.dragAxisY=axisY;const velocity=anisotropicDragAxisVelocity(particle.vx,particle.vy,axisX,axisY);particle.vx=velocity.x;particle.vy=velocity.y;
+    }
+  }
+};
+
+const steerCreatureFacing = (creature, desiredAngle, magnitude, turnGain, maxTurnAcceleration, forwardOffset=0, trackTravel=false) => {
+  if(!creature?.alive||magnitude<.05)return;
+  const body=[];for(const id of creature.particleIds){const particle=particles.get(id);if(particle?.bound)body.push(particle);}if(body.length<2)return;
+  const anchor=body[0],unwrapped=[];let cx=0,cy=0;
+  for(const particle of body){const x=anchor.x+wrapDelta(particle.x-anchor.x),y=anchor.y+wrapDelta(particle.y-anchor.y);unwrapped.push({particle,x,y});cx+=x;cy+=y;}
+  cx/=unwrapped.length;cy/=unwrapped.length;
+  const bodyAngle=creatureFacingAngle(creature),currentHeading=trackTravel?npcSteeringHeading(bodyAngle,forwardOffset,creature.travelX,creature.travelY):bodyAngle;
+  const error=shortestAngleDelta(desiredAngle,currentHeading);
+  const angularAcceleration=clamp(error*turnGain,-maxTurnAcceleration,maxTurnAcceleration)*Math.min(1,magnitude);
+  for(const sample of unwrapped){if(sample.particle.footPlanted)continue;const rx=sample.x-cx,ry=sample.y-cy;sample.particle.vx-=ry*angularAcceleration*CONFIG.dt;sample.particle.vy+=rx*angularAcceleration*CONFIG.dt;
+    const speed=Math.hypot(sample.particle.vx,sample.particle.vy);if(speed>CONFIG.maxSpeed){sample.particle.vx*=CONFIG.maxSpeed/speed;sample.particle.vy*=CONFIG.maxSpeed/speed;}}
+};
+
+const updateFootStates = () => {
+  for(const particle of particles.values()){
+    const creature=creatures.get(particle.owner);if(creature?.menuFrozen){particle.footPlanted=false;particle.previousX=particle.x;particle.previousY=particle.y;particle.vx=0;particle.vy=0;continue;}const shouldPlant=particle.bound&&isFootMaterial(particle.material)&&creature?.alive&&footIsPlanted(particle.material,tick,creature.id);
+    if(shouldPlant&&!particle.footPlanted){particle.footPlanted=true;particle.footAnchorX=particle.x;particle.footAnchorY=particle.y;}
+    else if(!shouldPlant&&particle.footPlanted)particle.footPlanted=false;
+    if(particle.footPlanted){particle.x=particle.footAnchorX;particle.y=particle.footAnchorY;particle.previousX=particle.x;particle.previousY=particle.y;particle.vx=0;particle.vy=0;}
+  }
+};
+
+const steerCreaturesFacing = () => {
+  for(const creature of creatures.values()){
+    if(creature.isHuman){if(creature.menuFrozen)continue;const humanInput=inputByController.get(creature.controllerId)||input,magnitude=Math.hypot(humanInput.x,humanInput.y);steerCreatureFacing(creature,Math.atan2(humanInput.y,humanInput.x),magnitude,CONFIG.playerTurnGain,CONFIG.playerMaxTurnAcceleration);}
+    else steerCreatureFacing(creature,creature.aiAngle,1,CONFIG.npcTurnGain,CONFIG.npcMaxTurnAcceleration,creature.forwardOffset,true);
+  }
+};
+
+const executeScheduledHiiBirth = (creature, matter, step) => {
+  if(!creature?.alive||!matter||matter.bound||!step||step.site!==creature.occupied)return false;
+  if(matter.owner!==0&&matter.owner!==creature.id)return false;
+  if(step.parents.length!==3||!step.parents.includes(step.split[0])||!step.parents.includes(step.split[1]))return false;
+  const siteParticles=new Map();
+  for(const id of creature.particleIds){const particle=particles.get(id);if(particle?.bound)siteParticles.set(particle.site,particle.id);}
+  if(siteParticles.has(step.site)||step.parents.some(parent=>!siteParticles.has(parent)))return false;
+  const splitKey=edgeKey(step.split[0],step.split[1]);
+  if(!creature.lineageEdges.has(splitKey))return false;
+  creature.lineageEdges.delete(splitKey);for(const parent of step.parents)creature.lineageEdges.add(edgeKey(step.site,parent));
+  matter.owner=creature.id;matter.bound=true;matter.site=step.site;matter.displaySlot=creature.occupied;
+  matter.pendingSlot=-1;matter.material=creature.blueprint.coverage[matter.displaySlot]?.material||0;matter.footPlanted=false;matter.dragAxisX=0;matter.dragAxisY=0;
+  creature.particleIds.add(matter.id);
+  creature.occupied+=1;creature.nextStep+=1;creature.birthOptions=null;creature.lastBirthTick=tick;
+  if(creature.lineageEdges.size!==2*creature.occupied-2)throw new Error("The H-II lineage edge count diverged during recruitment.");
+  rebuildPhysicalBonds(creature);
+  return true;
+};
+
+const advanceStagedRedraw = (creature) => {
+  if(!creature?.alive||!creature.regrowing)return false;
+  if(creature.occupied<creature.regrowTarget){
+    const step=creature.blueprint.steps[creature.occupied-4];
+    let matter=null;for(const id of creature.particleIds){const candidate=particles.get(id);if(candidate&&!candidate.bound&&candidate.pendingSlot===step?.site){matter=candidate;break;}}
+    if(!matter)for(const id of creature.particleIds){const candidate=particles.get(id);if(candidate&&!candidate.bound){matter=candidate;break;}}
+    if(!step||!matter||!executeScheduledHiiBirth(creature,matter,step))throw new Error(`Redraw H-II growth stalled at ${creature.occupied}/${creature.regrowTarget}.`);
+    if(creature.occupied%4===0||creature.occupied===creature.regrowTarget)self.postMessage({type:"REGROW_PROGRESS",controllerId:creature.controllerId,occupied:creature.occupied,total:creature.regrowTarget,redraw:true});
+  }
+  if(creature.occupied>=creature.regrowTarget){creature.regrowing=false;creature.shieldUntil=tick+120;self.postMessage({type:"PLAYER_EVENT",controllerId:creature.controllerId,kind:"STARTED",redraw:true});}
+  return true;
+};
+
+const recruitScheduledMatter = (creature) => {
+  if (!creature.alive || creature.occupied >= creatureCount(creature)) return false;
+  ensureBlueprintCapacity(creature.blueprint,creature.occupied+1);
+  const step = creature.blueprint.steps[creature.occupied - 4];
+  if (!step) return false;
+  const contactParticles = [];
+  for (const id of creature.particleIds) {
+    const particle = particles.get(id);
+    if (particle && particle.bound) contactParticles.push(particle);
+  }
+  if (!contactParticles.length) return false;
+  let bestFree = null, bestDistance = Infinity;
+  for (const id of creature.particleIds) {
+    const free = particles.get(id);
+    if (!free || free.bound) continue;
+    let dx = 0, dy = 0, separation = Infinity;
+    for (const contact of contactParticles) {
+      const candidateX = wrapDelta(contact.x - free.x), candidateY = wrapDelta(contact.y - free.y);
+      const candidateDistance = Math.hypot(candidateX,candidateY);
+      if (candidateDistance < separation) { dx = candidateX; dy = candidateY; separation = candidateDistance; }
+    }
+    const attraction = clamp(4 + separation * 0.9, 4, 18);
+    if (separation > 1e-6) { free.vx += dx / separation * attraction * CONFIG.dt; free.vy += dy / separation * attraction * CONFIG.dt; }
+    if (separation < bestDistance) { bestDistance = separation; bestFree = free; }
+  }
+  if (!bestFree || bestDistance > CONFIG.contactRadius * 1.12) return false;
+  return executeScheduledHiiBirth(creature,bestFree,step);
+};
+
+const candidateScoreCompare = (a,b) => {
+  for(let index=0;index<a.length;index++) if(a[index]!==b[index]) return a[index]-b[index];
+  return 0;
+};
+
+const hereditaryBirthOptions = (creature) => {
+  if (creature.birthOptions) return creature.birthOptions;
+  const siteParticles=new Map();
+  for(const id of creature.particleIds){const particle=particles.get(id);if(particle?.bound)siteParticles.set(particle.site,particle.id);}
+  const occupied=new Set(siteParticles.keys()), edgeList=bonds.filter(bond=>bond.owner===creature.id);
+  const options=new Map(), dna=creature.blueprint.sites;
+  for(const proposer of occupied){const candidates=[];
+    for(const child of dna[proposer].neighbors||[]){if(occupied.has(child))continue;
+      const nearby=(dna[child].validNeighbors||[]).filter(site=>occupied.has(site));
+      if(nearby.length<3||!nearby.includes(proposer))continue;const nearbySet=new Set(nearby);
+      for(const edge of edgeList){const u=edge.siteA,w=edge.siteB;if(!nearbySet.has(u)||!nearbySet.has(w))continue;
+        for(const z of nearby){if(z===u||z===w)continue;const parents=[u,w,z];if(!parents.includes(proposer))continue;
+          const pa=dna[u],pb=dna[w],pc=dna[z];
+          const area=doubleArea(pa,pb,pc);if(area<CONFIG.minimumParentArea)continue;
+          const target=dna[child],parentPositions=[pa,pb,pc];
+          const radii=parentPositions.map(point=>Math.hypot(target.x-point.x,target.y-point.y));
+          const inherited=trilaterateHereditaryPosition(parentPositions,radii);
+          if(!inherited||Math.hypot(inherited.x-target.x,inherited.y-target.y)>CONFIG.positionTolerance)continue;
+          const occupiedNeighbors=(dna[child].neighbors||[]).reduce((sum,site)=>sum+Number(occupied.has(site)),0);
+          candidates.push({site:child,proposer,parents,split:[u,w],score:[occupiedNeighbors,area,-Math.max(...radii),-(target.x*target.x+target.y*target.y)]});
+        }
+      }
+    }
+    if(candidates.length){candidates.sort((a,b)=>candidateScoreCompare(b.score,a.score));options.set(proposer,candidates);}
+  }
+  creature.birthOptions={options,siteParticles};return creature.birthOptions;
+};
+
+const recruitFreeMatter = (creature) => {
+  if(!creature.alive||creature.occupied>=creatureCount(creature))return false;
+  ensureBlueprintCapacity(creature.blueprint,creature.occupied+1);
+  const development=hereditaryBirthOptions(creature),fertile=new Set(development.options.keys());
+  if(!fertile.size)return false;
+  let contacting=null;
+  for(const id of creature.particleIds){const free=particles.get(id);if(!free||free.bound)continue;
+    free.vx+=rng.signed()*.018;free.vy+=rng.signed()*.018;
+    let nearest=null;
+    for(const site of fertile){const occupied=particles.get(development.siteParticles.get(site));if(!occupied)continue;
+      const dx=wrapDelta(occupied.x-free.x),dy=wrapDelta(occupied.y-free.y),distance=Math.hypot(dx,dy);
+      if(distance<100&&distance>1e-6&&(!nearest||distance<nearest.distance))nearest={occupied,site,dx,dy,distance};
+    }
+    if(!nearest)continue;const impulse=(3.2+(nearest.distance/100)*12)*CONFIG.dt,nx=nearest.dx/nearest.distance,ny=nearest.dy/nearest.distance;
+    free.vx+=nx*impulse;free.vy+=ny*impulse;nearest.occupied.vx-=nx*impulse;nearest.occupied.vy-=ny*impulse;
+    if(nearest.distance<=CONFIG.contactRadius*1.12&&(!contacting||nearest.distance<contacting.distance))contacting={free,site:nearest.site,distance:nearest.distance};
+  }
+  if(!contacting)return false;
+  const candidates=development.options.get(contacting.site),birth=candidates[rng.int(Math.min(6,candidates.length))];
+  const splitKey=edgeKey(birth.split[0],birth.split[1]);
+  bonds=bonds.filter(bond=>!(bond.owner===creature.id&&edgeKey(bond.siteA,bond.siteB)===splitKey));
+  contacting.free.bound=true;contacting.free.site=birth.site;contacting.free.displaySlot=birth.site;
+  contacting.free.material=creature.blueprint.coverage[contacting.free.displaySlot]?.material||0;
+  contacting.free.footPlanted=false;contacting.free.dragAxisX=0;contacting.free.dragAxisY=0;
+  for(const parent of birth.parents)addBond(creature.id,contacting.free.id,development.siteParticles.get(parent),birth.site,parent);
+  creature.occupied+=1;creature.nextStep+=1;creature.lastBirthTick=tick;creature.birthOptions=null;
+  return true;
+};
+
+const integrate = () => {
+  for (const particle of particles.values()) {
+    if(particlePinned(particle)){particle.previousX=particle.x;particle.previousY=particle.y;particle.vx=0;particle.vy=0;continue;}
+    particle.previousX = particle.x; particle.previousY = particle.y;
+    const speed = Math.hypot(particle.vx, particle.vy);
+    if (speed > CONFIG.maxSpeed) { particle.vx *= CONFIG.maxSpeed / speed; particle.vy *= CONFIG.maxSpeed / speed; }
+    particle.x = wrap(particle.x + particle.vx * CONFIG.dt);
+    particle.y = wrap(particle.y + particle.vy * CONFIG.dt);
+  }
+};
+
+const spatialPairs = (minimum) => {
+  const cellCount = Math.floor(CONFIG.worldSize / minimum);
+  const cells = new Map();
+  const keyFor = (cx,cy) => `${(cx % cellCount + cellCount) % cellCount}:${(cy % cellCount + cellCount) % cellCount}`;
+  for (const particle of particles.values()) {
+    const cx = Math.floor(particle.x / minimum), cy = Math.floor(particle.y / minimum);
+    const key = keyFor(cx,cy);
+    if (!cells.has(key)) cells.set(key, []);
+    cells.get(key).push(particle.id);
+  }
+  const pairs = [];
+  const seen = new Set();
+  for (const particle of particles.values()) {
+    const cx = Math.floor(particle.x / minimum), cy = Math.floor(particle.y / minimum);
+    for (let oy = -1; oy <= 1; oy += 1) for (let ox = -1; ox <= 1; ox += 1) {
+      for (const otherId of cells.get(keyFor(cx + ox, cy + oy)) || []) {
+        if (otherId === particle.id) continue;
+        const key = edgeKey(particle.id, otherId);
+        if (seen.has(key)) continue;
+        seen.add(key); pairs.push([particle.id, otherId]);
+      }
+    }
+  }
+  return pairs;
+};
+
+const solveJacobi = () => {
+  const minimum = CONFIG.radius * 2;
+  for (let iteration = 0; iteration < CONFIG.pbdIterations; iteration += 1) {
+    const maxId = nextParticleId + 1;
+    const correctionX = new Float32Array(maxId), correctionY = new Float32Array(maxId), weights = new Uint16Array(maxId);
+    for (const [firstId, secondId] of spatialPairs(minimum)) {
+      const first = particles.get(firstId), second = particles.get(secondId);
+      if (!first || !second) continue;
+      const dx = wrapDelta(second.x - first.x), dy = wrapDelta(second.y - first.y);
+      const correction = collisionCorrection(dx, dy, minimum);
+      if (!correction) continue;
+      correctionX[firstId] += correction.first.x; correctionY[firstId] += correction.first.y; weights[firstId] += 1;
+      correctionX[secondId] += correction.second.x; correctionY[secondId] += correction.second.y; weights[secondId] += 1;
+    }
+    for (const bond of bonds) {
+      const first = particles.get(bond.a), second = particles.get(bond.b);
+      if (!first || !second) continue;
+      const dx = wrapDelta(second.x - first.x), dy = wrapDelta(second.y - first.y);
+      const separation = Math.hypot(dx,dy);
+      if (separation < 1e-7) continue;
+      const amount = (separation - bondRest(bond)) * 0.5;
+      const cx = dx / separation * amount, cy = dy / separation * amount;
+      correctionX[first.id] += cx; correctionY[first.id] += cy; weights[first.id] += 1;
+      correctionX[second.id] -= cx; correctionY[second.id] -= cy; weights[second.id] += 1;
+    }
+    for (const particle of particles.values()) {
+      if(particlePinned(particle))continue;
+      const divisor = Math.max(1, weights[particle.id]);
+      particle.x = wrap(particle.x + correctionX[particle.id] / divisor);
+      particle.y = wrap(particle.y + correctionY[particle.id] / divisor);
+    }
+  }
+  for (const particle of particles.values()) {
+    particle.vx = particlePinned(particle)?0:wrapDelta(particle.x - particle.previousX) / CONFIG.dt * CONFIG.damping;
+    particle.vy = particlePinned(particle)?0:wrapDelta(particle.y - particle.previousY) / CONFIG.dt * CONFIG.damping;
+  }
+};
+
+const dampCreatureRotation = () => {
+  const removal=1-CONFIG.rotationalDamping;
+  for(const creature of creatures.values()){
+    if(creature.menuFrozen)continue;
+    const body=[];
+    for(const id of creature.particleIds){const particle=particles.get(id);if(particle?.bound)body.push(particle);}
+    if(body.length<2)continue;const anchor=body[0];let cx=0,cy=0;
+    const samples=body.map(particle=>{const x=anchor.x+wrapDelta(particle.x-anchor.x),y=anchor.y+wrapDelta(particle.y-anchor.y);cx+=x;cy+=y;return{particle,x,y};});
+    cx/=samples.length;cy/=samples.length;let angularMomentum=0,inertia=0;
+    for(const sample of samples){const rx=sample.x-cx,ry=sample.y-cy;angularMomentum+=rx*sample.particle.vy-ry*sample.particle.vx;inertia+=rx*rx+ry*ry;}
+    if(inertia<1e-7)continue;const omega=angularMomentum/inertia;
+    for(const sample of samples){if(sample.particle.footPlanted)continue;const rx=sample.x-cx,ry=sample.y-cy;sample.particle.vx+=omega*ry*removal;sample.particle.vy-=omega*rx*removal;}
+  }
+};
+
+const GPU_MAX_NEIGHBORS=32;
+let gpuPbdPromise=null,gpuPbdDisabled=false;
+const GPU_GRID_CLEAR_WGSL=`
+struct Parameters{count:f32,world:f32,minimum:f32,stiffness:f32,gridAxis:f32,gridCells:f32,pad0:f32,pad1:f32};
+@group(0) @binding(0) var<storage,read_write> cellHeads: array<atomic<u32>>;
+@group(0) @binding(1) var<uniform> parameters: Parameters;
+@compute @workgroup_size(64)
+fn main(@builtin(global_invocation_id) gid:vec3<u32>){
+  let index=gid.x;let gridCellCount=u32(parameters.gridCells);if(index<gridCellCount){atomicStore(&cellHeads[index],0xffffffffu);}
+}`;
+
+const GPU_GRID_BUILD_WGSL=`
+struct Parameters{count:f32,world:f32,minimum:f32,stiffness:f32,gridAxis:f32,gridCells:f32,pad0:f32,pad1:f32};
+@group(0) @binding(0) var<storage,read> inputPositions: array<vec2<f32>>;
+@group(0) @binding(1) var<storage,read_write> cellHeads: array<atomic<u32>>;
+@group(0) @binding(2) var<storage,read_write> cellNext: array<u32>;
+@group(0) @binding(3) var<uniform> parameters: Parameters;
+fn worldWrap(value:f32,world:f32)->f32{return value-floor(value/world)*world;}
+@compute @workgroup_size(64)
+fn main(@builtin(global_invocation_id) gid:vec3<u32>){
+  let index=gid.x;let count=u32(parameters.count);if(index>=count){return;}
+  let world=parameters.world;let cellsPerAxis=u32(parameters.gridAxis);let cellWidth=world/f32(cellsPerAxis);
+  let point=vec2<f32>(worldWrap(inputPositions[index].x,world),worldWrap(inputPositions[index].y,world));
+  let cx=min(u32(floor(point.x/cellWidth)),cellsPerAxis-1u);let cy=min(u32(floor(point.y/cellWidth)),cellsPerAxis-1u);
+  let cell=cy*cellsPerAxis+cx;cellNext[index]=atomicExchange(&cellHeads[cell],index);
+}`;
+
+const GPU_PBD_WGSL=`
+struct Parameters{count:f32,world:f32,minimum:f32,stiffness:f32,gridAxis:f32,gridCells:f32,pad0:f32,pad1:f32};
+@group(0) @binding(0) var<storage,read> inputPositions: array<vec2<f32>>;
+@group(0) @binding(1) var<storage,read_write> outputPositions: array<vec2<f32>>;
+@group(0) @binding(2) var<storage,read> neighborIndices: array<u32>;
+@group(0) @binding(3) var<storage,read> neighborRests: array<f32>;
+@group(0) @binding(4) var<storage,read> neighborDegrees: array<u32>;
+@group(0) @binding(5) var<uniform> parameters: Parameters;
+@group(0) @binding(6) var<storage,read> pinData: array<vec4<f32>>;
+@group(0) @binding(7) var<storage,read_write> cellHeads: array<atomic<u32>>;
+@group(0) @binding(8) var<storage,read> cellNext: array<u32>;
+fn wrapped(value:f32,world:f32)->f32{var result=value;let half=world*.5;if(result>half){result-=world;}if(result<(-half)){result+=world;}return result;}
+fn worldWrap(value:f32,world:f32)->f32{return value-floor(value/world)*world;}
+fn wrapCell(value:i32,count:i32)->u32{var result=value%count;if(result<0){result+=count;}return u32(result);}
+@compute @workgroup_size(64)
+fn main(@builtin(global_invocation_id) gid:vec3<u32>){
+  let index=gid.x;let count=u32(parameters.count);if(index>=count){return;}
+  let world=parameters.world;let minimum=parameters.minimum;let stiffness=parameters.stiffness;
+  if(pinData[index].z>0.5){outputPositions[index]=pinData[index].xy;return;}
+  let point=inputPositions[index];var collisionCorrection=vec2<f32>(0.0);var collisionWeight=0.0;var bondCorrection=vec2<f32>(0.0);var bondWeight=0.0;
+  let cellsPerAxis=u32(parameters.gridAxis);let cellWidth=world/f32(cellsPerAxis);let wrappedPoint=vec2<f32>(worldWrap(point.x,world),worldWrap(point.y,world));
+  let centerX=i32(min(u32(floor(wrappedPoint.x/cellWidth)),cellsPerAxis-1u));let centerY=i32(min(u32(floor(wrappedPoint.y/cellWidth)),cellsPerAxis-1u));
+  for(var oy:i32=-1;oy<=1;oy+=1){for(var ox:i32=-1;ox<=1;ox+=1){
+    let cx=wrapCell(centerX+ox,i32(cellsPerAxis));let cy=wrapCell(centerY+oy,i32(cellsPerAxis));var other=atomicLoad(&cellHeads[cy*cellsPerAxis+cx]);
+    loop{if(other==0xffffffffu){break;}if(other!=index){var delta=inputPositions[other]-point;delta=vec2<f32>(wrapped(delta.x,world),wrapped(delta.y,world));let separation=length(delta);if(separation<minimum&&separation>0.0000001){let share=select(.5,1.0,pinData[other].z>0.5);collisionCorrection-=delta/separation*((minimum-separation)*share);collisionWeight+=1.0;}}other=cellNext[other];}
+  }}
+  let degree=min(neighborDegrees[index],${GPU_MAX_NEIGHBORS}u);
+  for(var slot:u32=0u;slot<degree;slot+=1u){let offset=index*${GPU_MAX_NEIGHBORS}u+slot;let other=neighborIndices[offset];var delta=inputPositions[other]-point;delta=vec2<f32>(wrapped(delta.x,world),wrapped(delta.y,world));let separation=length(delta);if(separation>0.0000001){let share=select(.5,1.0,pinData[other].z>0.5);bondCorrection+=delta/separation*((separation-neighborRests[offset])*share*stiffness);bondWeight+=1.0;}}
+  var correction=vec2<f32>(0.0);if(collisionWeight>0.0){correction+=collisionCorrection/collisionWeight;}if(bondWeight>0.0){correction+=bondCorrection/bondWeight;}
+  let next=point+correction;outputPositions[index]=vec2<f32>(worldWrap(next.x,world),worldWrap(next.y,world));
+}`;
+
+const initGpuPbd = async (minimumCapacity=CONFIG.worldBudget) => {
+  if(gpuPbdDisabled||!self.navigator?.gpu)return null;
+  try{
+    const adapter=await self.navigator.gpu.requestAdapter({powerPreference:"high-performance"});if(!adapter)return null;
+    const device=await adapter.requestDevice(),usage=self.GPUBufferUsage;let capacity=CONFIG.worldBudget;while(capacity<minimumCapacity)capacity*=2;
+    if(!usage||!self.GPUMapMode)throw new Error("WebGPU buffer constants are unavailable in this worker");
+    const make=(size,flags)=>device.createBuffer({size:Math.max(4,size),usage:flags});
+    device.pushErrorScope("validation");
+    const module=device.createShaderModule({code:GPU_PBD_WGSL}),clearModule=device.createShaderModule({code:GPU_GRID_CLEAR_WGSL}),buildModule=device.createShaderModule({code:GPU_GRID_BUILD_WGSL});
+    const [pipeline,clearPipeline,buildPipeline]=await Promise.all([
+      device.createComputePipelineAsync({layout:"auto",compute:{module,entryPoint:"main"}}),
+      device.createComputePipelineAsync({layout:"auto",compute:{module:clearModule,entryPoint:"main"}}),
+      device.createComputePipelineAsync({layout:"auto",compute:{module:buildModule,entryPoint:"main"}}),
+    ]);
+    const validationError=await device.popErrorScope();if(validationError)throw validationError;
+    const minimum=CONFIG.radius*2,gridAxis=Math.floor(CONFIG.worldSize/minimum),gridCells=gridAxis*gridAxis;
+    const state={device,capacity,pipeline,clearPipeline,buildPipeline,gridAxis,gridCells};
+    state.positionsA=make(capacity*8,usage.STORAGE|usage.COPY_DST|usage.COPY_SRC);state.positionsB=make(capacity*8,usage.STORAGE|usage.COPY_DST|usage.COPY_SRC);
+    state.neighbors=make(capacity*GPU_MAX_NEIGHBORS*4,usage.STORAGE|usage.COPY_DST);
+    state.rests=make(capacity*GPU_MAX_NEIGHBORS*4,usage.STORAGE|usage.COPY_DST);state.degrees=make(capacity*4,usage.STORAGE|usage.COPY_DST);
+    state.params=make(8*4,usage.UNIFORM|usage.COPY_DST);state.pinData=make(capacity*16,usage.STORAGE|usage.COPY_DST);state.readback=make(capacity*8,usage.COPY_DST|usage.MAP_READ);
+    state.cellHeads=make(gridCells*4,usage.STORAGE);state.cellNext=make(capacity*4,usage.STORAGE);
+    state.bindA=device.createBindGroup({layout:state.pipeline.getBindGroupLayout(0),entries:[
+      {binding:0,resource:{buffer:state.positionsA}},{binding:1,resource:{buffer:state.positionsB}},{binding:2,resource:{buffer:state.neighbors}},
+      {binding:3,resource:{buffer:state.rests}},{binding:4,resource:{buffer:state.degrees}},{binding:5,resource:{buffer:state.params}},{binding:6,resource:{buffer:state.pinData}},
+      {binding:7,resource:{buffer:state.cellHeads}},{binding:8,resource:{buffer:state.cellNext}}]});
+    state.bindB=device.createBindGroup({layout:state.pipeline.getBindGroupLayout(0),entries:[
+      {binding:0,resource:{buffer:state.positionsB}},{binding:1,resource:{buffer:state.positionsA}},{binding:2,resource:{buffer:state.neighbors}},
+      {binding:3,resource:{buffer:state.rests}},{binding:4,resource:{buffer:state.degrees}},{binding:5,resource:{buffer:state.params}},{binding:6,resource:{buffer:state.pinData}},
+      {binding:7,resource:{buffer:state.cellHeads}},{binding:8,resource:{buffer:state.cellNext}}]});
+    state.clearBind=device.createBindGroup({layout:state.clearPipeline.getBindGroupLayout(0),entries:[
+      {binding:0,resource:{buffer:state.cellHeads}},{binding:1,resource:{buffer:state.params}}]});
+    state.buildA=device.createBindGroup({layout:state.buildPipeline.getBindGroupLayout(0),entries:[
+      {binding:0,resource:{buffer:state.positionsA}},{binding:1,resource:{buffer:state.cellHeads}},{binding:2,resource:{buffer:state.cellNext}},{binding:3,resource:{buffer:state.params}}]});
+    state.buildB=device.createBindGroup({layout:state.buildPipeline.getBindGroupLayout(0),entries:[
+      {binding:0,resource:{buffer:state.positionsB}},{binding:1,resource:{buffer:state.cellHeads}},{binding:2,resource:{buffer:state.cellNext}},{binding:3,resource:{buffer:state.params}}]});
+    device.lost.then(()=>{gpuPbdDisabled=true;gpuPbdPromise=null;self.postMessage({type:"EVENT",kind:"GPU_PBD_FALLBACK"});});
+    self.postMessage({type:"EVENT",kind:"GPU_PBD_READY"});
+    return state;
+  }catch(error){gpuPbdDisabled=true;self.postMessage({type:"EVENT",kind:"GPU_PBD_FALLBACK"});return null;}
+};
+
+const solveWebGpuPbd = async () => {
+  if(gpuPbdDisabled)return false;const particleList=[...particles.values()];if(!particleList.length)return false;
+  if(!gpuPbdPromise)gpuPbdPromise=initGpuPbd(particleList.length);let state=await gpuPbdPromise;if(!state)return false;
+  if(particleList.length>state.capacity){gpuPbdPromise=initGpuPbd(particleList.length);state=await gpuPbdPromise;if(!state)return false;}
+  try{
+    const indexById=new Map(particleList.map((particle,index)=>[particle.id,index])),count=particleList.length;
+    const positions=new Float32Array(count*2),neighbors=new Uint32Array(count*GPU_MAX_NEIGHBORS),rests=new Float32Array(count*GPU_MAX_NEIGHBORS),degrees=new Uint32Array(count),pinData=new Float32Array(count*4);
+    particleList.forEach((particle,index)=>{const pinned=particlePinned(particle);positions[index*2]=particle.x;positions[index*2+1]=particle.y;pinData[index*4]=particle.footPlanted?particle.footAnchorX:particle.x;pinData[index*4+1]=particle.footPlanted?particle.footAnchorY:particle.y;pinData[index*4+2]=pinned?1:0;});
+    for(const bond of bonds){const a=indexById.get(bond.a),b=indexById.get(bond.b);if(a===undefined||b===undefined)continue;const rest=bondRest(bond);
+      if(degrees[a]<GPU_MAX_NEIGHBORS){const offset=a*GPU_MAX_NEIGHBORS+degrees[a]++;neighbors[offset]=b;rests[offset]=rest;}
+      if(degrees[b]<GPU_MAX_NEIGHBORS){const offset=b*GPU_MAX_NEIGHBORS+degrees[b]++;neighbors[offset]=a;rests[offset]=rest;}
+    }
+    const params=new Float32Array([count,CONFIG.worldSize,CONFIG.radius*2,CONFIG.bondStiffness,state.gridAxis,state.gridCells,0,0]);
+    const queue=state.device.queue;queue.writeBuffer(state.positionsA,0,positions);queue.writeBuffer(state.neighbors,0,neighbors);queue.writeBuffer(state.rests,0,rests);queue.writeBuffer(state.degrees,0,degrees);queue.writeBuffer(state.params,0,params);queue.writeBuffer(state.pinData,0,pinData);
+    const encoder=state.device.createCommandEncoder();for(let passIndex=0;passIndex<CONFIG.pbdIterations;passIndex++){
+      const clearPass=encoder.beginComputePass();clearPass.setPipeline(state.clearPipeline);clearPass.setBindGroup(0,state.clearBind);clearPass.dispatchWorkgroups(Math.ceil(state.gridCells/64));clearPass.end();
+      const buildPass=encoder.beginComputePass();buildPass.setPipeline(state.buildPipeline);buildPass.setBindGroup(0,passIndex%2===0?state.buildA:state.buildB);buildPass.dispatchWorkgroups(Math.ceil(count/64));buildPass.end();
+      const solvePass=encoder.beginComputePass();solvePass.setPipeline(state.pipeline);solvePass.setBindGroup(0,passIndex%2===0?state.bindA:state.bindB);solvePass.dispatchWorkgroups(Math.ceil(count/64));solvePass.end();
+    }
+    const finalBuffer=CONFIG.pbdIterations%2===0?state.positionsA:state.positionsB;encoder.copyBufferToBuffer(finalBuffer,0,state.readback,0,count*8);queue.submit([encoder.finish()]);
+    await state.readback.mapAsync(self.GPUMapMode.READ,0,count*8);const solved=new Float32Array(state.readback.getMappedRange(0,count*8).slice(0));state.readback.unmap();
+    for(const value of solved)if(!Number.isFinite(value))throw new Error("WebGPU produced a non-finite particle position");
+    particleList.forEach((particle,index)=>{const pinned=particlePinned(particle);particle.x=pinned?(particle.footPlanted?particle.footAnchorX:particle.x):solved[index*2];particle.y=pinned?(particle.footPlanted?particle.footAnchorY:particle.y):solved[index*2+1];particle.vx=pinned?0:wrapDelta(particle.x-particle.previousX)/CONFIG.dt*CONFIG.damping;particle.vy=pinned?0:wrapDelta(particle.y-particle.previousY)/CONFIG.dt*CONFIG.damping;});
+    dampCreatureRotation();return true;
+  }catch(error){gpuPbdDisabled=true;gpuPbdPromise=null;self.postMessage({type:"EVENT",kind:"GPU_PBD_FALLBACK"});return false;}
+};
+
+// Match the fps_testing hereditary simulation: constraints are resolved in
+// place, collision pass followed by bond pass, five times per fixed tick.
+const solveFpsPbd = () => {
+  const minimum=CONFIG.radius*2;
+  for(let iteration=0;iteration<CONFIG.pbdIterations;iteration++){
+    for(const [firstId,secondId] of spatialPairs(minimum)){
+      const first=particles.get(firstId),second=particles.get(secondId);if(!first||!second)continue;
+      const dx=wrapDelta(second.x-first.x),dy=wrapDelta(second.y-first.y),separation=Math.hypot(dx,dy);
+      const firstWeight=particlePinned(first)?0:1,secondWeight=particlePinned(second)?0:1,totalWeight=firstWeight+secondWeight;
+      if(separation>=minimum||separation<1e-7||!totalWeight)continue;const correction=(minimum-separation)/totalWeight,nx=dx/separation,ny=dy/separation;
+      first.x=wrap(first.x-nx*correction*firstWeight);first.y=wrap(first.y-ny*correction*firstWeight);second.x=wrap(second.x+nx*correction*secondWeight);second.y=wrap(second.y+ny*correction*secondWeight);
+    }
+    for(const bond of bonds){const first=particles.get(bond.a),second=particles.get(bond.b);if(!first||!second)continue;
+      const dx=wrapDelta(second.x-first.x),dy=wrapDelta(second.y-first.y),separation=Math.hypot(dx,dy),firstWeight=particlePinned(first)?0:1,secondWeight=particlePinned(second)?0:1,totalWeight=firstWeight+secondWeight;if(separation<1e-7||!totalWeight)continue;
+      const correction=(separation-bondRest(bond))/totalWeight*CONFIG.bondStiffness,nx=dx/separation,ny=dy/separation;
+      first.x=wrap(first.x+nx*correction*firstWeight);first.y=wrap(first.y+ny*correction*firstWeight);second.x=wrap(second.x-nx*correction*secondWeight);second.y=wrap(second.y-ny*correction*secondWeight);
+    }
+    for(const particle of particles.values())if(particle.footPlanted){particle.x=particle.footAnchorX;particle.y=particle.footAnchorY;}
+  }
+  for(const particle of particles.values()){
+    particle.vx=particlePinned(particle)?0:wrapDelta(particle.x-particle.previousX)/CONFIG.dt*CONFIG.damping;
+    particle.vy=particlePinned(particle)?0:wrapDelta(particle.y-particle.previousY)/CONFIG.dt*CONFIG.damping;
+  }
+  dampCreatureRotation();
+};
+
+const bounceCreatures = (first, second) => {
+  const a = creatureCenter(first), b = creatureCenter(second);
+  let dx = wrapDelta(b.x - a.x), dy = wrapDelta(b.y - a.y);
+  const d = Math.max(0.001, Math.hypot(dx,dy)); dx /= d; dy /= d;
+  if(!first.menuFrozen)for (const id of first.particleIds) { const p = particles.get(id); if (p) { p.vx -= dx * 1.4; p.vy -= dy * 1.4; } }
+  if(!second.menuFrozen)for (const id of second.particleIds) { const p = particles.get(id); if (p) { p.vx += dx * 1.4; p.vy += dy * 1.4; } }
+};
+
+const absorb = (winner, loser) => {
+  if (!winner.alive || !loser.alive) return;
+  const loserSize = creatureCount(loser),loserHuman=humanForCreature(loser),winnerHuman=humanForCreature(winner);
+  const loserParticles=[...loser.particleIds],releasedCount=deathFoodCount(loserSize);
+  for(let index=0;index<releasedCount;index+=1){const swap=index+rng.int(loserParticles.length-index);[loserParticles[index],loserParticles[swap]]=[loserParticles[swap],loserParticles[index]];}
+  const releasedIds=new Set(loserParticles.slice(0,releasedCount));
+  loser.alive = false;
+  bonds = bonds.filter((bond) => bond.owner !== loser.id);
+  for (const id of loserParticles) {
+    const particle = particles.get(id);
+    loser.particleIds.delete(id);
+    if (!particle) continue;
+    if(!releasedIds.has(id)){particles.delete(id);continue;}
+    particle.owner = 0; particle.bound = false; particle.site = -1; particle.displaySlot = -1; particle.material = 0; particle.footPlanted = false; particle.dragAxisX = 0; particle.dragAxisY = 0;
+    particle.vx = particle.vx * .7 + rng.signed() * 1.2;
+    particle.vy = particle.vy * .7 + rng.signed() * 1.2;
+  }
+  creatures.delete(loser.id);
+  if (!loser.isHuman) respawns.push({ at: tick + 120 });
+  if (winnerHuman) {
+    winnerHuman.eaten+=1;
+    if(winner.controllerId===localControllerId)eaten=winnerHuman.eaten;
+    self.postMessage({ type: "PLAYER_EVENT", controllerId:winner.controllerId, kind: "FOOD_RELEASED", food: releasedCount });
+  }
+  if (loserHuman) {
+    loserHuman.alive=false;loserHuman.creatureId=0;loserHuman.best=Math.max(loserHuman.best,loserSize);
+    self.postMessage({ type: "PLAYER_EVENT", controllerId:loser.controllerId, kind: "GAME_OVER", size: loserSize, eaten:loserHuman.eaten, best:loserHuman.best });
+  }
+};
+
+const captureFood = (creature, food) => {
+  if(!creature?.alive||creature.regrowing||food.owner!==0)return false;
+  ensureBlueprintCapacity(creature.blueprint,creature.occupied+1);
+  const step=creature.blueprint.steps[creature.occupied-4];if(!step)return false;
+  if(!executeScheduledHiiBirth(creature,food,step))return false;
+  if(creature.isHuman){
+    const state=humanForCreature(creature);state.lifetimeGained+=1;state.best=Math.max(state.best,creatureCount(creature));
+    const earned=earnedRedrawTokens(state.lifetimeGained,state.tokens,state.spentTokens||0);
+    if(earned>0){state.tokens+=earned;self.postMessage({type:"PLAYER_EVENT",controllerId:creature.controllerId,kind:"REDRAW_UNLOCK",tokens:state.tokens});}
+    if(creature.controllerId===localControllerId){lifetimeGained=state.lifetimeGained;best=state.best;tokens=state.tokens;}
+  }
+  return true;
+};
+
+const resolveCreatureContacts = () => {
+  const ownerPairs = new Set();
+  const capturedFood=new Set(),capturesByCreature=new Map();
+  for (const [aId,bId] of spatialPairs(CONFIG.radius * 2.2)) {
+    const a = particles.get(aId), b = particles.get(bId);
+    if (!a || !b || a.owner === b.owner) continue;
+    const dx = wrapDelta(b.x - a.x), dy = wrapDelta(b.y - a.y);
+    const distance=Math.hypot(dx,dy);
+    if((a.owner===0)!==(b.owner===0)){
+      const food=a.owner===0?a:b,creature=creatures.get(a.owner===0?b.owner:a.owner);
+      const captures=capturesByCreature.get(creature?.id)||0;
+      if(distance<=CONFIG.contactRadius*1.12&&!capturedFood.has(food.id)&&captures<2&&captureFood(creature,food)){
+        capturedFood.add(food.id);capturesByCreature.set(creature.id,captures+1);
+      }
+      continue;
+    }
+    if(a.owner!==0&&b.owner!==0&&distance<=CONFIG.radius*2.08)ownerPairs.add(edgeKey(a.owner,b.owner));
+  }
+  for (const key of ownerPairs) {
+    const [aId,bId] = key.split(":").map(Number);
+    const a = creatures.get(aId), b = creatures.get(bId);
+    if (!a || !b || !a.alive || !b.alive) continue;
+    if (a.shieldUntil > tick || b.shieldUntil > tick || a.menuFrozen || b.menuFrozen) { bounceCreatures(a,b); continue; }
+    const ac = creatureCount(a), bc = creatureCount(b);
+    const comparison = compareCreatureSizes(ac, bc);
+    if (comparison === 0) bounceCreatures(a,b);
+    else absorb(comparison > 0 ? a : b, comparison > 0 ? b : a);
+  }
+};
+
+const physicsStep = async () => {
+  if (paused) return;
+  for(const creature of creatures.values())if(creature.regrowing)advanceStagedRedraw(creature);
+  for (const creature of creatures.values()){updateCreatureTravelEstimate(creature);updateCreatureIntent(creature);}
+  updateFootStates();
+  steerCreaturesFacing();
+  integrate();
+  if(!(await solveWebGpuPbd()))solveFpsPbd();
+  applyAnisotropicFluidDrag();
+  tick += 1;
+  if (tick % 4 === 0 && phase === "playing") resolveCreatureContacts();
+  if (phase === "assembling" || phase === "regrowing") {
+    const p = player();
+    if (p.occupied !== lastProgressOccupied || tick - lastProgressTick >= 30) {
+      self.postMessage({ type: "REGROW_PROGRESS", occupied: p.occupied, total: creatureCount(p), redraw: phase === "regrowing" });
+      lastProgressOccupied = p.occupied; lastProgressTick = tick;
+    }
+    if (p.occupied >= creatureCount(p)) {
+      if (phase === "regrowing") p.shieldUntil = tick + 120;
+      phase = "playing";
+      fillNpcs();
+      self.postMessage({ type: "EVENT", kind: "STARTED", redraw: p.shieldUntil > tick });
+    }
+  }
+  if (phase === "playing") {
+    respawns = respawns.filter((respawn) => {
+      if (respawn.at > tick) return true;
+      spawnNpc(); return false;
+    });
+    fillNpcs();
+  }
+};
+
+const acquireFloatBuffer = (length) => {
+  const bytes = length * Float32Array.BYTES_PER_ELEMENT;
+  const index = recycledParticles.findIndex((buffer) => buffer.byteLength >= bytes);
+  return new Float32Array(index >= 0 ? recycledParticles.splice(index,1)[0] : new ArrayBuffer(bytes));
+};
+const acquireUintBuffer = (length) => {
+  const bytes = length * Uint32Array.BYTES_PER_ELEMENT;
+  const index = recycledBonds.findIndex((buffer) => buffer.byteLength >= bytes);
+  return new Uint32Array(index >= 0 ? recycledBonds.splice(index,1)[0] : new ArrayBuffer(bytes));
+};
+
+const sendFrame = () => {
+  if (phase === "idle") return;
+  const particleList = [...particles.values()];
+  const indexById = new Map(particleList.map((particle,index) => [particle.id,index]));
+  const particleData = acquireFloatBuffer(Math.max(1, particleList.length * 4));
+  particleList.forEach((particle,index) => {
+    particleData[index*4] = particle.x; particleData[index*4+1] = particle.y; particleData[index*4+2] = particle.owner; particleData[index*4+3] = particle.bound ? particle.material+1+(particle.footPlanted?.25:0) : 0;
+  });
+  const validBonds = bonds.filter((bond) => indexById.has(bond.a) && indexById.has(bond.b));
+  const bondData = acquireUintBuffer(Math.max(1, validBonds.length * 2));
+  validBonds.forEach((bond,index) => { bondData[index*2] = indexById.get(bond.a); bondData[index*2+1] = indexById.get(bond.b); });
+  const p = player();
+  const metadata = [...creatures.values()].map((creature) => {
+    const center = creatureCenter(creature);
+    return { id: creature.id, count: creatureCount(creature), occupied: creature.occupied, isPlayer: creature.isPlayer, isHuman:creature.isHuman, controllerId:creature.controllerId||"", frozen:Boolean(creature.menuFrozen), color: creature.color, label: creature.label, x: center.x, y: center.y, shield: creature.shieldUntil > tick||creature.menuFrozen };
+  });
+  const hudByController={};for(const state of humanPlayers.values()){const creature=creatures.get(state.creatureId),size=creatureCount(creature);hudByController[state.controllerId]={size,occupied:creature?.occupied||0,eaten:state.eaten,best:state.best,tokens:state.tokens,phase:state.alive?phase:"gameover",conquered:state.conquered};}
+  const localHud=hudByController[localControllerId]||{size:creatureCount(p),occupied:p?.occupied||0,eaten,best,tokens,phase};
+  self.postMessage({ type: "FRAME", tick, particleBuffer: particleData.buffer, particleLength: particleList.length * 4, bondBuffer: bondData.buffer, bondLength: validBonds.length * 2, creatures: metadata, hud:localHud, hudByController }, [particleData.buffer, bondData.buffer]);
+};
+
+const startLoop = () => {
+  if (loopHandle) clearInterval(loopHandle);
+  let busy=false;
+  loopHandle = setInterval(async () => {
+    if(busy)return;busy=true;
+    try{
+      const steps = 1;
+      for (let i = 0; i < steps; i += 1) await physicsStep();
+      const now = Date.now();
+      if (now - lastFrameAt >= 32) { lastFrameAt = now; sendFrame(); }
+    }finally{busy=false;}
+  }, 1000 / 60);
+};
+
+self.onmessage = (event) => {
+  const message = event.data || {};
+  try {
+    if (message.type === "SET_AI_PLAYER_PREFERENCE") {
+      npcPlayerPreferenceEnabled = message.enabled !== false;
+    } else if(message.type==="GET_ARCHETYPE_DESIGN"){
+      const design=buildNpcDesign(message.archetype);self.postMessage({type:"ARCHETYPE_DESIGN",archetype:message.archetype,mask:design.mask,materials:design.materials});
+    } else if (message.type === "COMPILE_BLUEPRINT") {
+      const design=buildNpcDesign(message.archetype),blueprint=applyMaterialMap(buildBlueprint(design.mask,message.seed>>>0||1,CONFIG.blueprintCount),design.materials);
+      self.postMessage({ type: "COMPILED_BLUEPRINT", jobId: message.jobId, label: message.label, color: message.color, forwardOffset: message.forwardOffset||0, blueprint });
+    } else if (message.type === "INIT") {
+      const seed = message.seed >>> 0 || 1;localControllerId="local";
+      playerMask = new Uint8Array(message.playerMask);
+      playerMaterials = message.playerMaterials ? new Uint8Array(message.playerMaterials) : new Uint8Array(playerMask.length);
+      self.postMessage({ type: "REGROW_PROGRESS", occupied: 0, total: 1, validating: true });
+      const blueprint = applyMaterialMap(buildBlueprint(playerMask, seed, CONFIG.blueprintCount),playerMaterials);
+      npcBlueprints = [];
+      npcBlueprintsReady = false;
+      resetWorld(blueprint, seed, false);
+      startLoop();
+      self.postMessage({ type: "EVENT", kind: "STARTED", redraw: false });
+    } else if (message.type === "ADD_BLUEPRINT") {
+      npcBlueprints.push({ label: message.label, color: message.color, forwardOffset: message.forwardOffset||0, blueprint: message.blueprint });
+    } else if (message.type === "NPC_BLUEPRINTS_READY") {
+      npcBlueprintsReady = true;
+      if (phase === "playing") fillNpcs();
+    } else if (message.type === "INPUT") {
+      if ((message.sequence || 0) >= input.sequence){input = { x: clamp(Number(message.x) || 0,-1,1), y: clamp(Number(message.y) || 0,-1,1), sequence: message.sequence || 0 };inputByController.set(localControllerId,input);}
+    } else if (message.type === "PAUSE") {
+      paused = Boolean(message.paused);
+    } else if (message.type === "REDRAW") {
+      const replacement = new Uint8Array(message.mask);
+      const blueprint = applyMaterialMap(buildBlueprint(replacement, (message.seed >>> 0) || tick + 1, CONFIG.blueprintCount),message.materials);
+      redrawHuman(localControllerId,blueprint,replacement,message.materials?new Uint8Array(message.materials):new Uint8Array(replacement.length));phase="playing";paused=false;
+    } else if (message.type === "RESTART") {
+      const p = player();
+      const blueprint = p?.blueprint || applyMaterialMap(buildBlueprint(playerMask, message.seed || 1, CONFIG.blueprintCount),playerMaterials);
+      resetWorld(blueprint, (message.seed >>> 0) || Date.now(), false);
+      self.postMessage({ type: "EVENT", kind: "STARTED", redraw: false });
+    } else if (message.type === "RECYCLE") {
+      if (message.particleBuffer) recycledParticles.push(message.particleBuffer);
+      if (message.bondBuffer) recycledBonds.push(message.bondBuffer);
+    }
+  } catch (error) {
+    if(message.type==="INIT")paused=true;
+    self.postMessage({ type: "ERROR", message: error instanceof Error ? error.message : String(error) });
+  }
+};
+
+self.__HII_TEST__ = { CONFIG, closeMask, analyzeMask, validateMask, segmentInsideMask, trilaterateHereditaryPosition, orderCoverageSites, buildBlueprint, ensureBlueprintCapacity, buildNpcDesign, applyMaterialMap, blueprintPosition, selectPhysicalEdgePairs, edgeKey, wrapDelta, shortestAngleDelta, compareCreatureSizes, deathFoodCount, earnedRedrawTokens, muscleRestMultiplier, musclePhase, isMuscleMaterial, isFootMaterial, footIsPlanted, powerLawQuantile, sampleNpcSize, npcGoalWeight, npcTargetScore, shouldSwitchNpcTarget, npcSteeringHeading, collisionCorrection, anisotropicDragAxisVelocity, anisotropicDragVelocity, localDragAxisFromDeformation, shouldGuideAssembly };
+    </script>
+
+    <script>
+      "use strict";
+
+      const gameCanvas = document.querySelector("#game");
+      const gameContext = gameCanvas.getContext("2d");
+      const drawCanvas = document.querySelector("#draw-canvas");
+      const drawContext = drawCanvas.getContext("2d", { willReadFrequently: true });
+      const previewCanvas = document.querySelector("#draw-preview");
+      const previewContext = previewCanvas.getContext("2d");
+      const creatureSelectOverlay = document.querySelector("#creature-select-overlay");
+      const creatureSelectError = document.querySelector("#creature-select-error");
+      const drawOverlay = document.querySelector("#draw-overlay");
+      const assemblyOverlay = document.querySelector("#assembly-overlay");
+      const gameoverOverlay = document.querySelector("#gameover-overlay");
+      const conqueredOverlay = document.querySelector("#conquered-overlay");
+      const conqueredOkayButton = document.querySelector("#conquered-okay");
+      const toast = document.querySelector("#toast");
+      const joystick = document.querySelector("#joystick");
+      const joystickKnob = joystick.querySelector("i");
+      const sizeElement = document.querySelector("#size");
+      const eatenElement = document.querySelector("#eaten");
+      const bestElement = document.querySelector("#best");
+      const tokensElement = document.querySelector("#tokens");
+      const redrawButton = document.querySelector("#redraw");
+      const settingsWrap = document.querySelector("#settings-wrap");
+      const settingsButton = document.querySelector("#settings-button");
+      const settingsPanel = document.querySelector("#settings-panel");
+      const debugOverlaysInput = document.querySelector("#debug-overlays");
+      const enemyPlayerPreferenceInput = document.querySelector("#enemy-player-preference");
+      const threatKey = document.querySelector("#threat-key");
+      const drawError = document.querySelector("#draw-error");
+      const assemblyBar = document.querySelector("#assembly-bar");
+      const assemblyCount = document.querySelector("#assembly-count");
+      const assemblyTitle = document.querySelector("#assembly-title");
+      const cancelDrawButton = document.querySelector("#cancel-draw");
+      const growButton = document.querySelector("#grow");
+      const brushInput = document.querySelector("#brush");
+
+      let worker = null;
+      let compilerWorkers = [];
+      let latestFrame = null;
+      let drawing = false;
+      let drawingTool = "body";
+      let lastDrawPoint = null;
+      let undoStack = [];
+      let inputSequence = 0;
+      let activePointer = null;
+      let joystickOrigin = null;
+      let keyState = new Set();
+      let redrawMode = false;
+      let toastTimer = null;
+      let lastMask = null;
+      let debugOverlaysEnabled = false;
+      let enemyPlayerPreferenceEnabled = true;
+      let conqueredShown = false;
+      const localControllerId = "local";
+      let pendingLocalSeed = 0;
+      let creatureSelectionPurpose = "initial";
+      const archetypeDesigns = new Map();
+      let bestSize = Math.max(24, Number.parseInt(localStorage.getItem("hii-best-size") || "24", 10) || 24);
+      let currentHud = { size: 24, eaten: 0, best: bestSize, tokens: 0, phase: "idle" };
+
+      const WORLD = 192;
+      const CONQUERED_SIZE = 900;
+      const MATERIAL_COLORS = [null,"#ff5fa2","#ffb040","#5c84ff","#63e68b","#40dfcf"];
+      const DRAW_PALETTE = [
+        {design:1,tool:"body",rgb:[255,255,255],color:"#ffffff"},
+        {design:2,tool:"muscle",rgb:[255,95,162],color:"#ff5fa2"},
+        {design:3,tool:"muscle-a",rgb:[255,176,64],color:"#ffb040"},
+        {design:4,tool:"muscle-b",rgb:[92,132,255],color:"#5c84ff"},
+        {design:5,tool:"foot",rgb:[99,230,139],color:"#63e68b"},
+        {design:6,tool:"foot-b",rgb:[64,223,207],color:"#40dfcf"},
+      ];
+      const NPC_ARCHETYPES = [
+        { id: "walker", label: "Walker", color: "#ffbd66", forwardOffset: -Math.PI/2, seedSalt: 101 },
+        { id: "swimmer", label: "Swimmer", color: "#77d7ff", forwardOffset: 0, seedSalt: 211 },
+        { id: "worm", label: "Worm", color: "#ff7fbd", forwardOffset: 0, seedSalt: 307 },
+      ];
+      const archetypeById = (id) => NPC_ARCHETYPES.find(entry=>entry.id===id);
+
+      const resizeGame = () => {
+        const dpr = Math.min(2, window.devicePixelRatio || 1);
+        const width = Math.max(1, Math.floor(innerWidth * dpr));
+        const height = Math.max(1, Math.floor(innerHeight * dpr));
+        if (gameCanvas.width !== width || gameCanvas.height !== height) {
+          gameCanvas.width = width; gameCanvas.height = height;
+          gameCanvas.style.width = `${innerWidth}px`; gameCanvas.style.height = `${innerHeight}px`;
+        }
+      };
+
+      const wrapDelta = (value) => value > WORLD / 2 ? value - WORLD : value < -WORLD / 2 ? value + WORLD : value;
+
+      const showToast = (message) => {
+        toast.textContent = message;
+        toast.classList.add("show");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toast.classList.remove("show"), 2200);
+      };
+
+      const setSettingsOpen = (open) => {
+        const expanded=Boolean(open);settingsPanel.hidden=!expanded;settingsButton.setAttribute("aria-expanded",String(expanded));
+      };
+
+      const setDebugOverlays = (enabled) => {
+        debugOverlaysEnabled=Boolean(enabled);debugOverlaysInput.checked=debugOverlaysEnabled;threatKey.hidden=!debugOverlaysEnabled;
+      };
+
+      const setEnemyPlayerPreference = (enabled) => {
+        enemyPlayerPreferenceEnabled=Boolean(enabled);enemyPlayerPreferenceInput.checked=enemyPlayerPreferenceEnabled;
+        worker?.postMessage({type:"SET_AI_PLAYER_PREFERENCE",enabled:enemyPlayerPreferenceEnabled});
+      };
+
+      const handlePlayerEvent = (message) => {
+        if(String(message.controllerId)!==String(localControllerId))return;
+        if(message.kind==="STARTED"){
+          assemblyOverlay.hidden=true;drawOverlay.hidden=true;gameoverOverlay.hidden=true;redrawMode=false;creatureSelectionPurpose="initial";
+          showToast(message.redraw?"New body complete · shield active":message.respawn?"Creature restored · shield active":"Your creature is alive");
+        }else if(message.kind==="FOOD_RELEASED")showToast(`${message.food} food particles released`);
+        else if(message.kind==="REDRAW_UNLOCK")showToast("Redraw unlocked");
+        else if(message.kind==="GAME_OVER"){
+          document.querySelector("#final-size").textContent=String(message.size);
+          document.querySelector("#final-copy").textContent=`You reached ${message.size} particles and consumed ${message.eaten} creatures.`;
+          bestSize=Math.max(bestSize,message.best||message.size);localStorage.setItem("hii-best-size",String(bestSize));
+          gameoverOverlay.hidden=false;
+        }
+      };
+
+      const displayRegrowProgress = (message) => {
+        assemblyOverlay.hidden=false;const progress=message.total?message.occupied/message.total:0;assemblyBar.style.width=`${Math.round(progress*100)}%`;
+        assemblyTitle.textContent=message.redraw?"Rebuilding through H-II growth":"Growing your drawing";
+        assemblyCount.textContent=message.validating?`Preparing hereditary masks · ${message.occupied}/${message.total}`:message.settling?"Tightening the inherited silhouette…":`${message.occupied} / ${message.total} particles inherited`;
+      };
+
+      const setLocalCreatureFrozen = (frozen) => {
+        worker?.postMessage({type:"PAUSE",paused:Boolean(frozen)});
+      };
+
+      const showConqueredNature = () => {
+        if(conqueredShown)return;conqueredShown=true;keyState.clear();activePointer=null;joystickOrigin=null;joystick.hidden=true;sendInput(0,0);
+        setLocalCreatureFrozen(true);conqueredOverlay.hidden=false;conqueredOkayButton.focus();
+      };
+
+      const updateHud = (hud) => {
+        currentHud = { ...currentHud, ...hud };
+        bestSize = Math.max(bestSize, currentHud.best || 24, currentHud.size || 24);
+        localStorage.setItem("hii-best-size", String(bestSize));
+        sizeElement.textContent = String(currentHud.size || 0);
+        eatenElement.textContent = String(currentHud.eaten || 0);
+        bestElement.textContent = String(bestSize);
+        tokensElement.textContent = String(currentHud.tokens || 0);
+        redrawButton.disabled = !(currentHud.tokens > 0 && currentHud.phase === "playing");
+        redrawButton.textContent = `Redraw · ${currentHud.tokens || 0}`;
+        if(currentHud.phase==="playing"&&currentHud.size>CONQUERED_SIZE&&!conqueredShown)showConqueredNature();
+      };
+
+      const render = () => {
+        resizeGame();
+        const dpr = Math.min(2, window.devicePixelRatio || 1);
+        const width = gameCanvas.width, height = gameCanvas.height;
+        gameContext.setTransform(1,0,0,1,0,0);
+        const gradient = gameContext.createRadialGradient(width * .5, height * .45, 0, width * .5, height * .45, Math.max(width,height) * .72);
+        gradient.addColorStop(0, "#0a1b18"); gradient.addColorStop(1, "#020706");
+        gameContext.fillStyle = gradient; gameContext.fillRect(0,0,width,height);
+
+        if (latestFrame) {
+          const playerMeta = latestFrame.creatures.find((creature) => creature.controllerId===localControllerId)||latestFrame.creatures.find((creature) => creature.isPlayer);
+          const camera = playerMeta || { x: WORLD/2, y: WORLD/2, count: 24 };
+          const viewUnits = (34 + Math.sqrt(Math.max(24, camera.count || 24)) * 1.7) * 2;
+          const scale = Math.min(width,height) / viewUnits;
+          const worldToScreen = (x,y) => ({ x: width/2 + wrapDelta(x-camera.x)*scale, y: height/2 + wrapDelta(y-camera.y)*scale });
+
+          gameContext.strokeStyle = "rgba(150, 230, 198, .045)";
+          gameContext.lineWidth = dpr;
+          const grid = 8;
+          const startX = camera.x - viewUnits;
+          const startY = camera.y - viewUnits;
+          gameContext.beginPath();
+          for (let x = Math.floor(startX/grid)*grid; x < camera.x+viewUnits; x += grid) {
+            const sx = width/2 + (x-camera.x)*scale; gameContext.moveTo(sx,0); gameContext.lineTo(sx,height);
+          }
+          for (let y = Math.floor(startY/grid)*grid; y < camera.y+viewUnits; y += grid) {
+            const sy = height/2 + (y-camera.y)*scale; gameContext.moveTo(0,sy); gameContext.lineTo(width,sy);
+          }
+          gameContext.stroke();
+
+          const particles = latestFrame.particles;
+          const particlePoint = (index) => {
+            const x=particles[index],y=particles[index+1];
+            return{x,y};
+          };
+          const bonds = latestFrame.bonds;
+          gameContext.strokeStyle = "rgba(139, 232, 194, .26)";
+          gameContext.lineWidth = Math.max(1, dpr * .8);
+          gameContext.beginPath();
+          for (let index = 0; index < latestFrame.bondLength; index += 2) {
+            const ai = bonds[index] * 4, bi = bonds[index+1] * 4;
+            if (ai >= latestFrame.particleLength || bi >= latestFrame.particleLength) continue;
+            const aWorld=particlePoint(ai),bWorld=particlePoint(bi),ax=aWorld.x,ay=aWorld.y,bx=bWorld.x,by=bWorld.y;
+            if(Math.abs(bx-ax)>WORLD/2||Math.abs(by-ay)>WORLD/2)continue;
+            const a = worldToScreen(ax,ay), b = worldToScreen(bx,by);
+            if(Math.abs(b.x-a.x)>width/2||Math.abs(b.y-a.y)>height/2)continue;
+            gameContext.moveTo(a.x,a.y); gameContext.lineTo(b.x,b.y);
+          }
+          gameContext.stroke();
+
+          const metaById = new Map(latestFrame.creatures.map((creature) => [creature.id,creature]));
+          const playerCount = playerMeta?.count || 0;
+          const radius = Math.max(2.1*dpr, .42*scale);
+          for (let index = 0; index < latestFrame.particleLength; index += 4) {
+            const position=particlePoint(index),point = worldToScreen(position.x,position.y);
+            if (point.x < -radius || point.x > width+radius || point.y < -radius || point.y > height+radius) continue;
+            const owner = particles[index+2];
+            const bound = particles[index+3] > .5;
+            const particleState=particles[index+3],material = Math.max(0,Math.floor(particleState)-1),planted=(material===4||material===5)&&particleState-Math.floor(particleState)>.1;
+            const meta = metaById.get(owner);
+            gameContext.beginPath(); gameContext.arc(point.x,point.y,radius,0,Math.PI*2);
+            gameContext.globalAlpha = bound ? 1 : .52;
+            gameContext.fillStyle = MATERIAL_COLORS[material] || meta?.color || "#9db5aa"; gameContext.fill();
+            gameContext.globalAlpha = 1;
+            if(planted){gameContext.strokeStyle="rgba(255,255,255,.95)";gameContext.lineWidth=Math.max(1.3*dpr,radius*.22);gameContext.stroke();}
+            if (debugOverlaysEnabled && meta && meta.controllerId!==localControllerId) {
+              gameContext.strokeStyle = meta.count < playerCount ? "rgba(123,255,153,.8)" : meta.count > playerCount ? "rgba(255,101,119,.92)" : "rgba(255,211,108,.8)";
+              gameContext.lineWidth = Math.max(1.2*dpr, radius*.24); gameContext.stroke();
+            } else if (meta?.shield) {
+              gameContext.strokeStyle = "rgba(255,255,255,.9)"; gameContext.lineWidth = 2*dpr; gameContext.stroke();
+            }
+          }
+
+          if(debugOverlaysEnabled){
+            gameContext.textAlign = "center";
+            gameContext.textBaseline = "bottom";
+            gameContext.font = `${Math.max(11*dpr, 12)}px system-ui`;
+            for (const meta of latestFrame.creatures) {
+              if (meta.controllerId===localControllerId || !meta.label) continue;
+              const point = worldToScreen(meta.x,meta.y);
+              if (point.x < 0 || point.x > width || point.y < 0 || point.y > height) continue;
+              gameContext.fillStyle = "rgba(242,255,248,.74)";
+              gameContext.fillText(`${meta.label} ${meta.count}`, point.x, point.y - Math.sqrt(meta.count)*radius*.38 - 7*dpr);
+            }
+          }
+        }
+        requestAnimationFrame(render);
+      };
+
+      const snapshotDrawing = () => {
+        undoStack.push(drawContext.getImageData(0,0,drawCanvas.width,drawCanvas.height));
+        if (undoStack.length > 18) undoStack.shift();
+      };
+
+      const drawPoint = (event) => {
+        const rect = drawCanvas.getBoundingClientRect();
+        return { x: (event.clientX-rect.left)/rect.width*drawCanvas.width, y: (event.clientY-rect.top)/rect.height*drawCanvas.height };
+      };
+
+      const paintSegment = (from,to) => {
+        drawContext.save();
+        drawContext.globalCompositeOperation = drawingTool === "eraser" ? "destination-out" : "source-over";
+        drawContext.strokeStyle = DRAW_PALETTE.find(entry=>entry.tool===drawingTool)?.color||"#ffffff";
+        drawContext.lineWidth = Number(brushInput.value);
+        drawContext.lineCap = "round"; drawContext.lineJoin = "round";
+        drawContext.beginPath(); drawContext.moveTo(from.x,from.y); drawContext.lineTo(to.x,to.y); drawContext.stroke(); drawContext.restore();
+        renderDrawPreview();
+      };
+
+      const designFromDrawing = () => {
+        const temp = document.createElement("canvas"); temp.width = 72; temp.height = 72;
+        const context = temp.getContext("2d", { willReadFrequently: true });
+        context.drawImage(drawCanvas,0,0,72,72);
+        const data = context.getImageData(0,0,72,72).data;
+        const design = new Uint8Array(72*72);
+        for (let index = 0; index < design.length; index += 1) {
+          if(data[index*4+3]<=30)continue;
+          let nearest=DRAW_PALETTE[0],bestDistance=Infinity;
+          for(const entry of DRAW_PALETTE){const dr=data[index*4]-entry.rgb[0],dg=data[index*4+1]-entry.rgb[1],db=data[index*4+2]-entry.rgb[2],distance=dr*dr+dg*dg+db*db;if(distance<bestDistance){bestDistance=distance;nearest=entry;}}
+          design[index]=nearest.design;
+        }
+        return design;
+      };
+
+      const previewPoints = (mask,count=24) => {
+        const candidates = [];
+        for (let y=0;y<72;y+=1) for (let x=0;x<72;x+=1) if (mask[y*72+x]) candidates.push({x,y});
+        if (!candidates.length) return [];
+        const selected = [candidates[Math.floor(candidates.length/2)]];
+        while (selected.length < count && selected.length < candidates.length) {
+          let best=null, bestDistance=-1;
+          for (const point of candidates) {
+            let nearest=Infinity;
+            for (const chosen of selected) nearest=Math.min(nearest,(point.x-chosen.x)**2+(point.y-chosen.y)**2);
+            if (nearest>bestDistance) { bestDistance=nearest; best=point; }
+          }
+          selected.push(best);
+        }
+        return selected;
+      };
+
+      const renderDrawPreview = () => {
+        previewContext.clearRect(0,0,previewCanvas.width,previewCanvas.height);
+        const design = designFromDrawing();
+        const points = previewPoints(design,24);
+        const scale = previewCanvas.width/72;
+        previewContext.shadowBlur=9;
+        for (const point of points) {
+          const material=Math.max(0,design[point.y*72+point.x]-1),color=MATERIAL_COLORS[material];
+          previewContext.fillStyle = color || "rgba(101,217,255,.88)";
+          previewContext.shadowColor = color || "rgba(101,217,255,.8)";
+          previewContext.beginPath(); previewContext.arc((point.x+.5)*scale,(point.y+.5)*scale,3.3,0,Math.PI*2); previewContext.fill();
+        }
+        previewContext.shadowBlur=0;
+      };
+
+      const drawSavedMask = (mask) => {
+        if (!mask) return;
+        const temp=document.createElement("canvas"); temp.width=72; temp.height=72;
+        const context=temp.getContext("2d"); const image=context.createImageData(72,72);
+        for(let i=0;i<mask.length;i++){const entry=DRAW_PALETTE[Math.max(0,mask[i]-1)];image.data[i*4]=entry?.rgb[0]||255;image.data[i*4+1]=entry?.rgb[1]||255;image.data[i*4+2]=entry?.rgb[2]||255;image.data[i*4+3]=mask[i]?255:0;}
+        context.putImageData(image,0,0); drawContext.clearRect(0,0,drawCanvas.width,drawCanvas.height); drawContext.imageSmoothingEnabled=true; drawContext.drawImage(temp,28,28,520,520); renderDrawPreview();
+      };
+
+      const saveMask = (mask) => {
+        lastMask = new Uint8Array(mask);
+        let binary=""; for (const value of lastMask) binary += String(Math.min(6,value));
+        try { localStorage.setItem("hii-last-mask", binary); } catch {}
+      };
+
+      const loadMask = () => {
+        try {
+          const binary=localStorage.getItem("hii-last-mask");
+          if (!binary || binary.length!==72*72) return null;
+          return Uint8Array.from(binary, value => Math.max(0,Math.min(6,Number(value)||0)));
+        } catch { return null; }
+      };
+
+      const makeInlineWorker = () => {
+        const source=document.querySelector("#physics-worker").textContent;
+        const url=URL.createObjectURL(new Blob([source],{type:"text/javascript"}));
+        const inlineWorker=new Worker(url);
+        URL.revokeObjectURL(url);
+        return inlineWorker;
+      };
+
+      const renderArchetypePreview = (button,design) => {
+        const canvas=button.querySelector("canvas"),context=canvas.getContext("2d");context.clearRect(0,0,canvas.width,canvas.height);const scale=canvas.width/72;
+        for(let y=0;y<72;y++)for(let x=0;x<72;x++){const value=design[y*72+x];if(!value)continue;context.fillStyle=DRAW_PALETTE[Math.max(0,value-1)]?.color||"#fff";context.fillRect(x*scale,y*scale,Math.ceil(scale),Math.ceil(scale));}
+      };
+
+      const prepareArchetypeChoices = () => {
+        const loader=makeInlineWorker(),remaining=new Set(NPC_ARCHETYPES.map(entry=>entry.id));
+        loader.onmessage=event=>{const message=event.data;if(message.type!=="ARCHETYPE_DESIGN")return;const mask=new Uint8Array(message.mask),materials=new Uint8Array(message.materials),design=Uint8Array.from(mask,(enabled,index)=>enabled?(materials[index]?materials[index]+1:1):0);archetypeDesigns.set(message.archetype,design);const button=document.querySelector(`[data-archetype="${message.archetype}"]`);if(button){renderArchetypePreview(button,design);button.disabled=false;}remaining.delete(message.archetype);if(!remaining.size)loader.terminate();};
+        loader.onerror=()=>{creatureSelectError.textContent="The built-in creature choices could not be prepared in this browser.";loader.terminate();};
+        for(const entry of NPC_ARCHETYPES)loader.postMessage({type:"GET_ARCHETYPE_DESIGN",archetype:entry.id});
+      };
+
+      const showCreatureSelector = (purpose="initial") => {
+        creatureSelectionPurpose=purpose;creatureSelectError.textContent="";drawOverlay.hidden=true;assemblyOverlay.hidden=true;gameoverOverlay.hidden=true;creatureSelectOverlay.hidden=false;
+        document.querySelector("#creature-select-eyebrow").textContent=purpose==="respawn"?"Choose your next species":"Choose your starting species";
+        document.querySelector("#creature-select-title").textContent=purpose==="respawn"?"Return as a proven creature.":"How will you move?";
+      };
+
+      const selectArchetype = (archetypeId) => {
+        const archetype=archetypeById(archetypeId),source=archetypeDesigns.get(archetypeId);if(!archetype||!source){creatureSelectError.textContent="That creature is still loading.";return;}
+        const design=new Uint8Array(source),mask=Uint8Array.from(design,value=>value?1:0),materials=Uint8Array.from(design,value=>value>=2?value-1:0);pendingLocalSeed=archetype.seedSalt;saveMask(design);creatureSelectOverlay.hidden=true;conqueredShown=false;conqueredOverlay.hidden=true;
+        if(creatureSelectionPurpose==="respawn"){
+          assemblyOverlay.hidden=false;assemblyTitle.textContent=`Preparing ${archetype.label}`;assemblyCount.textContent="Compiling its hereditary body…";
+          createWorker();startNpcCompilers(NPC_ARCHETYPES);worker.postMessage({type:"INIT",playerMask:mask.buffer,playerMaterials:materials.buffer,seed:pendingLocalSeed},[mask.buffer,materials.buffer]);
+          return;
+        }
+        assemblyOverlay.hidden=false;assemblyTitle.textContent=`Preparing ${archetype.label}`;assemblyCount.textContent="Compiling the same hereditary body used by the ecosystem…";createWorker();startNpcCompilers(NPC_ARCHETYPES);worker.postMessage({type:"INIT",playerMask:mask.buffer,playerMaterials:materials.buffer,seed:pendingLocalSeed},[mask.buffer,materials.buffer]);
+      };
+
+      const stopCompilerWorkers = () => {
+        for (const compiler of compilerWorkers) compiler.terminate();
+        compilerWorkers=[];
+      };
+
+      const startNpcCompilers = (jobs) => {
+        stopCompilerWorkers();
+        const queue=[...jobs];
+        let finished=0,readySent=false;
+        const finishJob=()=>{
+          finished+=1;
+          if(!readySent&&finished>=jobs.length){readySent=true;if(worker)worker.postMessage({type:"NPC_BLUEPRINTS_READY"});}
+        };
+        if(!jobs.length){if(worker)worker.postMessage({type:"NPC_BLUEPRINTS_READY"});return;}
+        const concurrency=Math.max(1,Math.min(3,(navigator.hardwareConcurrency||2)-1,queue.length));
+        const startNext=(compiler)=>{
+          const job=queue.shift();
+          if(!job){compiler.terminate();compilerWorkers=compilerWorkers.filter(candidate=>candidate!==compiler);return;}
+          compiler.postMessage({type:"COMPILE_BLUEPRINT",jobId:job.id,archetype:job.id,label:job.label,color:job.color,forwardOffset:job.forwardOffset,seed:job.seedSalt});
+        };
+        for(let index=0;index<concurrency;index+=1){
+          const compiler=makeInlineWorker();compilerWorkers.push(compiler);
+          compiler.onmessage=(event)=>{
+            const message=event.data;
+            if(message.type==="COMPILED_BLUEPRINT"&&worker){
+              worker.postMessage({type:"ADD_BLUEPRINT",label:message.label,color:message.color,forwardOffset:message.forwardOffset,blueprint:message.blueprint});
+              finishJob();
+              startNext(compiler);
+            }else if(message.type==="ERROR"){finishJob();startNext(compiler);}
+          };
+          compiler.onerror=()=>{finishJob();startNext(compiler);};
+          startNext(compiler);
+        }
+      };
+
+      const createWorker = () => {
+        if (worker) worker.terminate();
+        stopCompilerWorkers();
+        worker=makeInlineWorker();
+        worker.onmessage=handleWorkerMessage;
+        worker.postMessage({type:"SET_AI_PLAYER_PREFERENCE",enabled:enemyPlayerPreferenceEnabled});
+        worker.onerror=(event)=>{
+          drawError.textContent=event.message||"The physics worker could not start.";
+          assemblyOverlay.hidden=true;drawOverlay.hidden=false;
+        };
+      };
+
+      const recycleLatest = () => {
+        if (!latestFrame || !worker) return;
+        worker.postMessage({type:"RECYCLE",particleBuffer:latestFrame.particles.buffer,bondBuffer:latestFrame.bonds.buffer},[latestFrame.particles.buffer,latestFrame.bonds.buffer]);
+        latestFrame=null;
+      };
+
+      const handleWorkerMessage = (event) => {
+        const message=event.data;
+        if(message.type==="FRAME"){
+          recycleLatest();
+          const particles=new Float32Array(message.particleBuffer,0,message.particleLength),bonds=new Uint32Array(message.bondBuffer,0,message.bondLength);
+          latestFrame={tick:message.tick,particles,particleLength:message.particleLength,bonds,bondLength:message.bondLength,creatures:message.creatures,hudByController:message.hudByController||{},phase:message.hud?.phase||"playing"};
+          updateHud(message.hudByController?.[localControllerId]||message.hud);
+        } else if(message.type==="READY"){
+          drawOverlay.hidden=true;gameoverOverlay.hidden=true;
+          if(message.phase==="playing"){
+            assemblyOverlay.hidden=true;
+          }else{
+            assemblyOverlay.hidden=false;
+          assemblyTitle.textContent=message.phase==="regrowing"?"Growing your new design":"Growing your drawing";
+          assemblyBar.style.width="0%";assemblyCount.textContent="The K4 seed is recruiting free matter…";
+          }
+        } else if(message.type==="REGROW_PROGRESS"){
+          displayRegrowProgress(message);
+        } else if(message.type==="EVENT"){
+          if(message.kind==="STARTED"){
+            assemblyOverlay.hidden=true;drawOverlay.hidden=true;gameoverOverlay.hidden=true;creatureSelectionPurpose="initial";
+            showToast(message.redraw?"New body complete · shield active":"Your creature is alive");
+          } else if(message.kind==="EAT") showToast(`Absorbed ${message.gained} particles`);
+          else if(message.kind==="GPU_PBD_READY") showToast("WebGPU parallel physics active");
+          else if(message.kind==="GPU_PBD_FALLBACK") showToast("Using compatible CPU physics");
+          else if(message.kind==="FOOD_RELEASED") showToast(`${message.food} food particles released`);
+          else if(message.kind==="REDRAW_UNLOCK") showToast("Redraw unlocked");
+          else if(message.kind==="GAME_OVER"){
+            document.querySelector("#final-size").textContent=String(message.size);
+            document.querySelector("#final-copy").textContent=`You reached ${message.size} particles and consumed ${message.eaten} creatures.`;
+            bestSize=Math.max(bestSize,message.best||message.size);localStorage.setItem("hii-best-size",String(bestSize));
+            gameoverOverlay.hidden=false;
+          }
+        } else if(message.type==="PLAYER_EVENT"){
+          handlePlayerEvent(message);
+        } else if(message.type==="ERROR"){
+          assemblyOverlay.hidden=true;
+          if(redrawMode){
+            drawOverlay.hidden=false;drawError.textContent=message.message;
+          }else if(currentHud.phase==="idle"||creatureSelectionPurpose==="respawn"){showCreatureSelector(creatureSelectionPurpose);creatureSelectError.textContent=message.message;}
+          else showToast(message.message);
+        }
+      };
+
+      const beginGrowth = () => {
+        drawError.textContent="";
+        const design=designFromDrawing();
+        const mask=Uint8Array.from(design,value=>value?1:0);
+        const materials=Uint8Array.from(design,value=>value>=2?value-1:0);
+        if(mask.reduce((sum,value)=>sum+value,0)<80){drawError.textContent="Draw a larger, connected creature first.";return;}
+        saveMask(design);
+        drawOverlay.hidden=true;
+        assemblyTitle.textContent="Preparing your creature";
+        assemblyCount.textContent="Validating the complete H‑II growth schedule…";
+        if(redrawMode){
+          assemblyOverlay.hidden=false;
+          if(!worker)createWorker();worker.postMessage({type:"REDRAW",mask:mask.buffer,materials:materials.buffer,seed:Date.now()>>>0},[mask.buffer,materials.buffer]);
+        }else{
+          assemblyOverlay.hidden=false;if(!worker) createWorker();
+          conqueredShown=false;conqueredOverlay.hidden=true;
+          startNpcCompilers(NPC_ARCHETYPES);
+          worker.postMessage({type:"INIT",playerMask:mask.buffer,playerMaterials:materials.buffer,seed:Date.now()>>>0},[mask.buffer,materials.buffer]);
+        }
+      };
+
+      const sendInput = (x,y) => {
+        const magnitude=Math.hypot(x,y);if(magnitude>1){x/=magnitude;y/=magnitude;}
+        const sequence=++inputSequence;
+        worker?.postMessage({type:"INPUT",x,y,sequence});
+      };
+
+      const updateKeyboardInput = () => {
+        const x=(keyState.has("ArrowRight")||keyState.has("KeyD")?1:0)-(keyState.has("ArrowLeft")||keyState.has("KeyA")?1:0);
+        const y=(keyState.has("ArrowDown")||keyState.has("KeyS")?1:0)-(keyState.has("ArrowUp")||keyState.has("KeyW")?1:0);
+        sendInput(x,y);
+      };
+
+      drawCanvas.addEventListener("pointerdown",event=>{event.preventDefault();drawCanvas.setPointerCapture(event.pointerId);snapshotDrawing();drawing=true;lastDrawPoint=drawPoint(event);paintSegment(lastDrawPoint,lastDrawPoint);});
+      drawCanvas.addEventListener("pointermove",event=>{if(!drawing)return;const next=drawPoint(event);paintSegment(lastDrawPoint,next);lastDrawPoint=next;});
+      const endDrawing=()=>{drawing=false;lastDrawPoint=null;};
+      drawCanvas.addEventListener("pointerup",endDrawing);drawCanvas.addEventListener("pointercancel",endDrawing);
+
+      const selectDrawingTool = (tool) => {
+        drawingTool=tool;
+        document.querySelector("#pen").classList.toggle("tool-active",tool==="body");
+        document.querySelector("#muscle").classList.toggle("tool-active",tool==="muscle");
+        document.querySelector("#muscle-a").classList.toggle("tool-active",tool==="muscle-a");
+        document.querySelector("#muscle-b").classList.toggle("tool-active",tool==="muscle-b");
+        document.querySelector("#foot").classList.toggle("tool-active",tool==="foot");
+        document.querySelector("#foot-b").classList.toggle("tool-active",tool==="foot-b");
+        document.querySelector("#eraser").classList.toggle("tool-active",tool==="eraser");
+      };
+      document.querySelector("#pen").addEventListener("click",()=>selectDrawingTool("body"));
+      document.querySelector("#muscle").addEventListener("click",()=>selectDrawingTool("muscle"));
+      document.querySelector("#muscle-a").addEventListener("click",()=>selectDrawingTool("muscle-a"));
+      document.querySelector("#muscle-b").addEventListener("click",()=>selectDrawingTool("muscle-b"));
+      document.querySelector("#foot").addEventListener("click",()=>selectDrawingTool("foot"));
+      document.querySelector("#foot-b").addEventListener("click",()=>selectDrawingTool("foot-b"));
+      document.querySelector("#eraser").addEventListener("click",()=>selectDrawingTool("eraser"));
+      document.querySelector("#undo").addEventListener("click",()=>{const image=undoStack.pop();if(image){drawContext.putImageData(image,0,0);renderDrawPreview();}});
+      document.querySelector("#clear").addEventListener("click",()=>{snapshotDrawing();drawContext.clearRect(0,0,drawCanvas.width,drawCanvas.height);renderDrawPreview();});
+      brushInput.addEventListener("input",()=>document.querySelector("#brush-value").textContent=brushInput.value);
+      growButton.addEventListener("click",beginGrowth);
+      cancelDrawButton.addEventListener("click",()=>{drawOverlay.hidden=true;redrawMode=false;setLocalCreatureFrozen(false);});
+      redrawButton.addEventListener("click",()=>{if(currentHud.tokens<1)return;redrawMode=true;cancelDrawButton.hidden=false;document.querySelector("#draw-title").textContent="Redesign every inherited particle.";document.querySelector("#draw-eyebrow").textContent=`${currentHud.size} particles · costs one redraw`;drawError.textContent="";drawOverlay.hidden=false;setLocalCreatureFrozen(true);if(lastMask)drawSavedMask(lastMask);});
+      settingsButton.addEventListener("click",()=>setSettingsOpen(settingsPanel.hidden));
+      debugOverlaysInput.addEventListener("change",()=>setDebugOverlays(debugOverlaysInput.checked));
+      enemyPlayerPreferenceInput.addEventListener("change",()=>setEnemyPlayerPreference(enemyPlayerPreferenceInput.checked));
+      addEventListener("pointerdown",event=>{if(!settingsPanel.hidden&&!settingsWrap.contains(event.target))setSettingsOpen(false);},true);
+      conqueredOkayButton.addEventListener("click",()=>{conqueredOverlay.hidden=true;setLocalCreatureFrozen(false);});
+      document.querySelector("#restart").addEventListener("click",()=>{conqueredShown=false;conqueredOverlay.hidden=true;gameoverOverlay.hidden=true;assemblyOverlay.hidden=false;worker?.postMessage({type:"RESTART",seed:Date.now()>>>0});});
+      document.querySelector("#new-creature").addEventListener("click",()=>{conqueredShown=false;conqueredOverlay.hidden=true;redrawMode=false;showCreatureSelector("respawn");});
+
+      for(const button of document.querySelectorAll("[data-archetype]"))button.addEventListener("click",()=>selectArchetype(button.dataset.archetype));
+
+      addEventListener("keydown",event=>{if(event.code==="Escape"&&!settingsPanel.hidden){setSettingsOpen(false);return;}if(!conqueredOverlay.hidden)return;if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","KeyW","KeyA","KeyS","KeyD"].includes(event.code)){event.preventDefault();keyState.add(event.code);updateKeyboardInput();}});
+      addEventListener("keyup",event=>{if(keyState.delete(event.code))updateKeyboardInput();});
+      addEventListener("blur",()=>{keyState.clear();sendInput(0,0);});
+
+      gameCanvas.addEventListener("pointerdown",event=>{
+        if(event.pointerType==="mouse"&&event.button!==0)return;
+        if(activePointer!==null)return;
+        if(creatureSelectOverlay.hidden&&drawOverlay.hidden&&assemblyOverlay.hidden&&gameoverOverlay.hidden&&conqueredOverlay.hidden){event.preventDefault();activePointer=event.pointerId;gameCanvas.setPointerCapture(event.pointerId);joystickOrigin={x:event.clientX,y:event.clientY};joystick.hidden=false;joystick.style.left=`${event.clientX}px`;joystick.style.top=`${event.clientY}px`;joystickKnob.style.transform="translate(-50%,-50%)";}
+      });
+      gameCanvas.addEventListener("pointermove",event=>{
+        if(event.pointerId!==activePointer||!joystickOrigin)return;
+        event.preventDefault();
+        let dx=event.clientX-joystickOrigin.x,dy=event.clientY-joystickOrigin.y;const max=48;const length=Math.hypot(dx,dy);if(length>max){dx*=max/length;dy*=max/length;}
+        joystickKnob.style.transform=`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px))`;sendInput(dx/max,dy/max);
+      });
+      const endJoystick=event=>{if(event.pointerId!==activePointer)return;activePointer=null;joystickOrigin=null;joystick.hidden=true;sendInput(0,0);};
+      gameCanvas.addEventListener("pointerup",endJoystick);gameCanvas.addEventListener("pointercancel",endJoystick);gameCanvas.addEventListener("lostpointercapture",endJoystick);
+
+      addEventListener("resize",resizeGame);
+      globalThis.visualViewport?.addEventListener("resize",resizeGame);
+      const saved=loadMask();if(saved){lastMask=saved;drawSavedMask(saved);}else renderDrawPreview();
+      bestElement.textContent=String(bestSize);
+      setDebugOverlays(false);
+      setSettingsOpen(false);
+      prepareArchetypeChoices();
+      showCreatureSelector("initial");
+      resizeGame();
+      requestAnimationFrame(render);
+    </script>
+  </body>
+</html>
